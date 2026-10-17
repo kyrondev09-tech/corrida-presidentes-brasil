@@ -531,6 +531,151 @@
         padding: 5px 9px;
       }
     }
+
+    /* ==========================================================================
+       BOTÕES DE PRESENTES DO TIKTOK (EXCLUSIVOS PARA DISPOSITIVOS MOBILE)
+       ========================================================================== */
+    .tiktok-gifts-column {
+      display: none; /* Oculto por padrão em telas desktop */
+      position: absolute;
+      z-index: 25;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: auto;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Somente visível em telas mobile ou estreitas (até 768px) */
+    @media (max-width: 768px) {
+      .tiktok-gifts-column {
+        display: flex;
+      }
+
+      .tiktok-gifts-left {
+        left: calc(6px + env(safe-area-inset-left, 0px));
+        top: calc(54px + env(safe-area-inset-top, 0px));
+      }
+
+      .tiktok-gifts-right {
+        right: calc(6px + env(safe-area-inset-right, 0px));
+        top: calc(54px + env(safe-area-inset-top, 0px));
+      }
+
+      /* Ajusta o banner central de memes para ficar perfeitamente no centro entre as colunas */
+      .meme-display-container {
+        top: calc(54px + env(safe-area-inset-top, 0px));
+        max-width: calc(100vw - 160px);
+      }
+    }
+
+    .tiktok-gift-card {
+      position: relative;
+      background: rgba(10, 16, 30, 0.85);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      border-radius: 9px;
+      padding: 5px 4px 6px 4px;
+      width: 68px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-shadow: 0 4px 0 #000000, 0 3px 10px rgba(0, 0, 0, 0.6);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease, opacity 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .tiktok-gift-card:active,
+    .tiktok-gift-card.is-gift-tapped {
+      transform: scale(0.90) translateY(2px);
+      box-shadow: 0 1px 0 #000000;
+      filter: brightness(1.25);
+    }
+
+    /* Borda e iluminação temática Bolsonaro */
+    .gift-bolsonaro {
+      border: 2px solid #00e676;
+      box-shadow: 0 4px 0 #003d14, 0 0 12px rgba(0, 230, 118, 0.4);
+    }
+
+    /* Borda e iluminação temática Lula */
+    .gift-lula {
+      border: 2px solid #ff1744;
+      box-shadow: 0 4px 0 #5c000a, 0 0 12px rgba(255, 23, 68, 0.4);
+    }
+
+    /* Wrapper do ícone proporcional e sem cortes */
+    .gift-icon-wrapper {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: visible;
+    }
+
+    .gift-icon-img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
+      pointer-events: none;
+    }
+
+    /* Legendas nítidas de alto contraste para transmissão ao vivo */
+    .gift-label {
+      font-family: var(--font-pixel);
+      font-size: 6.5px;
+      line-height: 1.15;
+      margin-top: 4px;
+      padding: 2.5px 3px;
+      border-radius: 4px;
+      width: 100%;
+      word-break: break-word;
+      pointer-events: none;
+      letter-spacing: 0.2px;
+    }
+
+    .gift-bolsonaro .gift-label {
+      background: rgba(0, 48, 18, 0.9);
+      border: 1px solid rgba(0, 230, 118, 0.65);
+      color: #ffdf00;
+      text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    }
+
+    .gift-lula .gift-label {
+      background: rgba(64, 4, 12, 0.9);
+      border: 1px solid rgba(255, 23, 68, 0.65);
+      color: #ffffff;
+      text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    }
+
+    /* Adaptação para celulares com tela compacta (320px a 375px) */
+    @media (max-width: 375px) {
+      .tiktok-gift-card {
+        width: 54px;
+        padding: 4px 2px 5px 2px;
+        border-radius: 7px;
+      }
+      .gift-icon-wrapper {
+        width: 38px;
+        height: 38px;
+      }
+      .gift-label {
+        font-size: 5.5px;
+        padding: 2px 1px;
+      }
+      .meme-display-container {
+        max-width: calc(100vw - 126px);
+      }
+    }
   </style>
 </head>
 <body>
@@ -572,6 +717,45 @@
     <!-- Banner Central de Frases dos Memes (Posicionado no estádio sem cobrir corredores nem controles) -->
     <div id="meme-banner" class="meme-display-container meme-hidden" aria-live="polite">
       <div id="meme-text" class="meme-text-box"></div>
+    </div>
+
+    <!-- Controles de Presentes TikTok (Exclusivos para Mobile / Telas Estreitas) -->
+    <!-- Coluna Esquerda: Bolsonaro -->
+    <div id="tiktok-gifts-left" class="tiktok-gifts-column tiktok-gifts-left" aria-label="Presentes TikTok Bolsonaro">
+      <!-- 1. Rosinha: Impulso Bolsonaro -->
+      <button type="button" id="gift-btn-rosa" class="tiktok-gift-card gift-bolsonaro" aria-label="Impulso Bolsonaro">
+        <div class="gift-icon-wrapper">
+          <img src="img/Rosa vermelha brilhante em 3D.png" alt="Rosinha" class="gift-icon-img" draggable="false" />
+        </div>
+        <span class="gift-label">Impulso Bolsonaro</span>
+      </button>
+
+      <!-- 2. Mãozinha de Coração: SUPER Bolsonaro -->
+      <button type="button" id="gift-btn-coracao" class="tiktok-gift-card gift-bolsonaro" aria-label="SUPER Bolsonaro">
+        <div class="gift-icon-wrapper">
+          <img src="img/Gestinho de coração em fundo transparente.png" alt="Mãozinha de coração" class="gift-icon-img" draggable="false" />
+        </div>
+        <span class="gift-label">SUPER Bolsonaro</span>
+      </button>
+    </div>
+
+    <!-- Coluna Direita: Lula -->
+    <div id="tiktok-gifts-right" class="tiktok-gifts-column tiktok-gifts-right" aria-label="Presentes TikTok Lula">
+      <!-- 1. GG: Impulso Lula -->
+      <button type="button" id="gift-btn-gg" class="tiktok-gift-card gift-lula" aria-label="Impulso Lula">
+        <div class="gift-icon-wrapper">
+          <img src="img/Ícone GG dourado de vitória gamer.png" alt="GG" class="gift-icon-img" draggable="false" />
+        </div>
+        <span class="gift-label">Impulso Lula</span>
+      </button>
+
+      <!-- 2. Fogos de Artifício: SUPER Lula -->
+      <button type="button" id="gift-btn-fogos" class="tiktok-gift-card gift-lula" aria-label="SUPER Lula">
+        <div class="gift-icon-wrapper">
+          <img src="img/Fogos rosa e azul.png" alt="Fogos de artifício" class="gift-icon-img" draggable="false" />
+        </div>
+        <span class="gift-label">SUPER Lula</span>
+      </button>
     </div>
 
     <!-- Interface Inferior com os 3 Botões de Impulso -->
@@ -2512,7 +2696,11 @@
           btnSound: document.getElementById('btn-sound'),
           soundIcon: document.getElementById('sound-icon'),
           btnReset: document.getElementById('btn-reset'),
-          targetChips: document.querySelectorAll('.target-chip')
+          targetChips: document.querySelectorAll('.target-chip'),
+          giftRosa: document.getElementById('gift-btn-rosa'),
+          giftCoracao: document.getElementById('gift-btn-coracao'),
+          giftGg: document.getElementById('gift-btn-gg'),
+          giftFogos: document.getElementById('gift-btn-fogos')
         };
 
         this.handleResize();
@@ -2657,6 +2845,26 @@
             this.triggerSuperBoost();
           }
         });
+
+        // Controles de Presentes TikTok (Exclusivos para Mobile)
+        const bindGiftTap = (btnEl, action) => {
+          if (!btnEl) return;
+          bindFastAction(btnEl, () => {
+            action();
+            btnEl.classList.remove('is-gift-tapped');
+            void btnEl.offsetWidth; // Força reflow para reiniciar animação visual de toque
+            btnEl.classList.add('is-gift-tapped');
+            setTimeout(() => btnEl.classList.remove('is-gift-tapped'), 160);
+          });
+        };
+
+        // Lado esquerdo — Bolsonaro: Rosinha (normal) e Mãozinha de coração (super)
+        bindGiftTap(this.ui.giftRosa, () => this.triggerNormalBoost(this.bolsonaro));
+        bindGiftTap(this.ui.giftCoracao, () => this.triggerSuperBoost(this.bolsonaro));
+
+        // Lado direito — Lula: GG (normal) e Fogos de artifício (super)
+        bindGiftTap(this.ui.giftGg, () => this.triggerNormalBoost(this.lula));
+        bindGiftTap(this.ui.giftFogos, () => this.triggerSuperBoost(this.lula));
       }
 
       setSuperTargetMode(mode) {
@@ -2695,18 +2903,18 @@
         }
       }
 
-      triggerSuperBoost() {
+      triggerSuperBoost(forcedRunner = null) {
         const anySuperActive = this.lula.superTimer > 0 || this.bolsonaro.superTimer > 0;
         if (anySuperActive || this.superCooldown > 0) {
           this.audio.playBeep(150, 0.07, 'sawtooth', 0.05);
           return;
         }
 
-        const chosenRunner = this.getEffectiveSuperRunner();
+        const chosenRunner = forcedRunner || this.getEffectiveSuperRunner();
         chosenRunner.activateSuperBoost();
 
-        // Se estiver em modo alternado, prepara o outro personagem para o próximo clique
-        if (this.superTargetMode === 'alternate') {
+        // Se estiver em modo alternado e o impulso não foi forçado diretamente por botão de presente
+        if (this.superTargetMode === 'alternate' && !forcedRunner) {
           this.nextAlternateTarget = chosenRunner.id === 'lula' ? 'bolsonaro' : 'lula';
         }
 
@@ -2918,6 +3126,27 @@
           this.ui.barSuper.style.transform = 'scaleX(1)';
           const nextRunner = this.getEffectiveSuperRunner();
           this.ui.statusSuper.textContent = `ALVO: ${nextRunner.name} [TECLA 3]`;
+        }
+
+        // Atualiza estado visual e feedback de cooldown dos presentes TikTok (Mobile)
+        if (this.ui.giftRosa) {
+          const rosaReady = this.bolsonaro.boostCooldown <= 0;
+          this.ui.giftRosa.style.opacity = rosaReady ? '1' : '0.62';
+          this.ui.giftRosa.style.filter = this.bolsonaro.boostTimer > 0 ? 'brightness(1.3) drop-shadow(0 0 6px #00e676)' : 'none';
+        }
+        if (this.ui.giftGg) {
+          const ggReady = this.lula.boostCooldown <= 0;
+          this.ui.giftGg.style.opacity = ggReady ? '1' : '0.62';
+          this.ui.giftGg.style.filter = this.lula.boostTimer > 0 ? 'brightness(1.3) drop-shadow(0 0 6px #ff1744)' : 'none';
+        }
+        const superAvailable = !activeSuperRunner && this.superCooldown <= 0;
+        if (this.ui.giftCoracao) {
+          this.ui.giftCoracao.style.opacity = superAvailable ? '1' : '0.62';
+          this.ui.giftCoracao.style.filter = this.bolsonaro.superTimer > 0 ? 'brightness(1.4) drop-shadow(0 0 8px #ffdf00)' : 'none';
+        }
+        if (this.ui.giftFogos) {
+          this.ui.giftFogos.style.opacity = superAvailable ? '1' : '0.62';
+          this.ui.giftFogos.style.filter = this.lula.superTimer > 0 ? 'brightness(1.4) drop-shadow(0 0 8px #ffdf00)' : 'none';
         }
       }
 
