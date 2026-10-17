@@ -434,6 +434,103 @@
         font-size: 6px;
       }
     }
+
+    /* ==========================================================================
+       BANNER DE MEMES: FRASES ANIMADAS NA TELA (ESTILO ARCADE RETRÔ)
+       ========================================================================== */
+    .meme-display-container {
+      position: absolute;
+      top: 68px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 15;
+      pointer-events: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 92%;
+      max-width: 560px;
+      transition: opacity 0.22s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .meme-display-container.meme-hidden {
+      opacity: 0;
+      transform: translateX(-50%) scale(0.65);
+      visibility: hidden;
+    }
+
+    .meme-display-container.meme-visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .meme-text-box {
+      font-family: var(--font-pixel);
+      font-size: 13px;
+      line-height: 1.35;
+      text-align: center;
+      padding: 8px 18px;
+      border-radius: 8px;
+      letter-spacing: 0.6px;
+      word-break: break-word;
+      animation: memePop 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    }
+
+    @keyframes memePop {
+      0% {
+        transform: scale(0.2) translateY(-12px);
+        opacity: 0;
+      }
+      65% {
+        transform: scale(1.14) translateY(2px);
+      }
+      85% {
+        transform: scale(0.96) translateY(-1px);
+      }
+      100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .meme-lula {
+      background: linear-gradient(135deg, #d91c24 0%, #99000a 100%);
+      color: #ffffff;
+      border: 3px solid #ffdf00;
+      box-shadow: 0 5px 0 #5c000a, 0 0 20px rgba(217, 28, 36, 0.9);
+      text-shadow: 2px 2px 0 #000, 0 0 8px #ffdf00;
+    }
+
+    .meme-bolsonaro {
+      background: linear-gradient(135deg, #00b33c 0%, #005a20 100%);
+      color: #ffdf00;
+      border: 3px solid #ffffff;
+      box-shadow: 0 5px 0 #003814, 0 0 20px rgba(0, 200, 83, 0.9);
+      text-shadow: 2px 2px 0 #000, 0 0 8px #00e676;
+    }
+
+    @media (max-width: 640px) {
+      .meme-display-container {
+        top: 58px;
+        max-width: 95%;
+      }
+      .meme-text-box {
+        font-size: 9.5px;
+        padding: 6px 12px;
+        border-width: 2px;
+        letter-spacing: 0.3px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .meme-display-container {
+        top: 50px;
+      }
+      .meme-text-box {
+        font-size: 8px;
+        padding: 5px 9px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -471,6 +568,11 @@
         </button>
       </div>
     </header>
+
+    <!-- Banner Central de Frases dos Memes (Posicionado no estádio sem cobrir corredores nem controles) -->
+    <div id="meme-banner" class="meme-display-container meme-hidden" aria-live="polite">
+      <div id="meme-text" class="meme-text-box"></div>
+    </div>
 
     <!-- Interface Inferior com os 3 Botões de Impulso -->
     <footer class="controls-dock">
@@ -545,6 +647,23 @@
       stadium: 'img/Estádio Pixelado_ Esporte É Vida.png',
       audio13: 'mp3/13.mp3',
       audio22: 'mp3/22.mp3'
+    };
+
+    /**
+     * Lista explícita de áudios de memes para GitHub Pages
+     * Organizados nas pastas 'mp3/meme lula/' e 'mp3/meme bolsonaro/'
+     */
+    const MEME_AUDIO_FILES = {
+      lula: [
+        'mp3/meme lula/ah-lula-meu-presidente.mp3',
+        'mp3/meme lula/faz-o-l-luan-gameplays.mp3',
+        'mp3/meme lula/lula-por-favor-me-ajuda.mp3'
+      ],
+      bolsonaro: [
+        'mp3/meme bolsonaro/bolsonaro-e-norte-bolsonaro-e-nordeste.mp3',
+        'mp3/meme bolsonaro/bolsonaro-risada.mp3',
+        'mp3/meme bolsonaro/imbroxavel.mp3'
+      ]
     };
 
     /* ==========================================================================
@@ -1673,6 +1792,74 @@
         });
       }
 
+      /**
+       * Dispara um pequeno show de fogos de artifício temático e leve durante a reprodução dos memes.
+       * Varia tamanho, formato, quantidade de partículas e local das explosões.
+       * Lula: Predominantemente vermelhos (com toques dourados e brancos).
+       * Bolsonaro: Predominantemente verdes (com toques amarelos e brancos).
+       */
+      spawnMemeFirework(theme = 'lula', screenW = 1200, screenH = 700) {
+        const palette = theme === 'lula'
+          ? ['#ff002b', '#ff3355', '#e60026', '#ff5400', '#ffdf00', '#ffffff', '#ffd166']
+          : ['#00e676', '#00c853', '#10b981', '#34d399', '#ffdf00', '#ffffff', '#ffe169'];
+
+        // Local aleatório no terço superior/médio da tela (estádio e céu)
+        const cx = screenW * (0.08 + Math.random() * 0.84);
+        const cy = screenH * (0.08 + Math.random() * 0.40);
+
+        // Variação de tamanho, velocidade e quantidade de partículas (12 a 22)
+        const count = 12 + Math.floor(Math.random() * 11);
+        const baseSpeed = 70 + Math.random() * 115;
+        const sizeBoost = Math.random() < 0.3 ? 1 : 0;
+        const blastLife = 0.65 + Math.random() * 0.55;
+
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.35;
+          const speed = baseSpeed * (0.65 + Math.random() * 0.70);
+          const color = palette[Math.floor(Math.random() * palette.length)];
+          const maxLife = blastLife * (0.75 + Math.random() * 0.5);
+
+          this.fireworks.push({
+            x: cx,
+            y: cy,
+            prevX: cx,
+            prevY: cy,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            gravity: 36 + Math.random() * 24,
+            drag: 0.966,
+            size: (2 + Math.floor(Math.random() * 3)) + sizeBoost,
+            color,
+            alpha: 0.95,
+            life: maxLife,
+            maxLife,
+            delay: 0,
+            sparkle: Math.random() < 0.5,
+            hasTrail: true
+          });
+        }
+
+        // Flash central discreto de ignição
+        this.fireworks.push({
+          x: cx,
+          y: cy,
+          prevX: cx,
+          prevY: cy,
+          vx: 0,
+          vy: 0,
+          gravity: 0,
+          drag: 1,
+          size: 14 + sizeBoost * 6,
+          color: '#ffffff',
+          alpha: 0.8,
+          life: 0.09,
+          maxLife: 0.09,
+          delay: 0,
+          sparkle: false,
+          isFlash: true
+        });
+      }
+
       spawnBanner(text, subtext, bgColor, borderColor) {
         // Evita acumular muitos banners iguais
         if (this.banners.length > 1) this.banners.shift();
@@ -1885,7 +2072,376 @@
     }
 
     /* ==========================================================================
-       5. ENGINE PRINCIPAL DO JOGO
+       5. SISTEMA CENTRALIZADO DE MEMES (ÁUDIOS, FRASES DINÂMICAS E FOGOS)
+       ========================================================================== */
+    class MemeManager {
+      constructor(game) {
+        this.game = game;
+        this.activeLeader = null; // 'lula' | 'bolsonaro' | null (empate)
+        this.currentAudioSource = null;
+        this.isPlaying = false;
+        this.isWaitingNext = false;
+        this.nextTimer = null;
+        this.phraseInterval = null;
+        this.fireworkTimer = 0;
+
+        // Histórico para evitar repetição consecutiva de áudio e frase
+        this.lastPlayedMeme = { lula: null, bolsonaro: null };
+        this.lastPhrase = { lula: null, bolsonaro: null };
+
+        // Playlists embaralhadas atuais e ponteiro de índice
+        this.playlists = { lula: [], bolsonaro: [] };
+        this.playlistIndices = { lula: 0, bolsonaro: 0 };
+
+        // Frases grandes, chamativas e animadas para a tela
+        this.phrases = {
+          lula: [
+            'É O LULA!',
+            'LULAAAA!',
+            'OLHA O LULA!',
+            'LULA NA FRENTE!',
+            'FAZ O L!',
+            'O HOMEM DISPAROU!',
+            'O BRASIL FELIZ DE NOVO!'
+          ],
+          bolsonaro: [
+            'É O BOLSONARO!',
+            'MITO!',
+            'BOLSONARO NA FRENTE!',
+            'OLHA O BOLSONARO!',
+            'ACELERA CAPITÃO!',
+            'IMBROXÁVEL NA PISTA!',
+            'BRASIL ACIMA DE TUDO!'
+          ]
+        };
+
+        this.bannerEl = document.getElementById('meme-banner');
+        this.textEl = document.getElementById('meme-text');
+      }
+
+      /**
+       * Gera uma nova ordem aleatória para os memes do personagem.
+       * Garante que:
+       * 1. A ordem seja verdadeiramente aleatória (Fisher-Yates).
+       * 2. Não comece sempre pelo primeiro arquivo da pasta.
+       * 3. O primeiro áudio dessa nova sequência NÃO seja igual ao último tocado
+       *    por esse mesmo personagem na sua liderança anterior.
+       */
+      createShuffledSequence(runnerId) {
+        const memes = [...(MEME_AUDIO_FILES[runnerId] || [])];
+        if (memes.length <= 1) return memes;
+
+        // Fisher-Yates shuffle
+        for (let i = memes.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [memes[i], memes[j]] = [memes[j], memes[i]];
+        }
+
+        // Evita que o primeiro da nova sequência seja o mesmo que acabou de tocar
+        const lastPlayed = this.lastPlayedMeme[runnerId];
+        if (lastPlayed && memes[0] === lastPlayed) {
+          const swapIdx = 1 + Math.floor(Math.random() * (memes.length - 1));
+          [memes[0], memes[swapIdx]] = [memes[swapIdx], memes[0]];
+        }
+
+        return memes;
+      }
+
+      /**
+       * Atualização contínua chamada a cada frame do loop principal
+       */
+      update(dt, detectedLeader, screenW, screenH) {
+        const soundEnabled = this.game.audio && this.game.audio.enabled;
+
+        // Se o som do jogo estiver mutado, interrompe e oculta
+        if (!soundEnabled) {
+          if (this.isPlaying || this.isWaitingNext) {
+            this.stopCurrentMeme();
+            this.hideText();
+          }
+          return;
+        }
+
+        // 1. No EMPATE (detectedLeader === null): pausar a reprodução dos memes
+        if (!detectedLeader) {
+          if (this.activeLeader !== null) {
+            this.stopCurrentMeme();
+            this.hideText();
+            this.activeLeader = null;
+          }
+          return;
+        }
+
+        // 2. MUDANÇA DE LIDERANÇA:
+        // "Quando a liderança mudar, interromper imediatamente os memes do antigo líder
+        //  e começar a sequência do novo líder."
+        // "Sempre que um personagem assumir a liderança, criar uma nova ordem aleatória para os memes dele."
+        if (detectedLeader !== this.activeLeader) {
+          this.stopCurrentMeme();
+          this.activeLeader = detectedLeader;
+
+          // Cria a nova ordem aleatória sem repetição do último áudio
+          this.playlists[this.activeLeader] = this.createShuffledSequence(this.activeLeader);
+          this.playlistIndices[this.activeLeader] = 0;
+
+          // Inicia imediatamente o primeiro meme da nova sequência
+          this.playCurrentMeme(screenW, screenH);
+          return;
+        }
+
+        // 3. Se há líder mas não está tocando nem aguardando o intervalo de 2s
+        if (this.activeLeader && !this.isPlaying && !this.isWaitingNext) {
+          this.playCurrentMeme(screenW, screenH);
+        }
+
+        // 4. Fogos de artifício ocasionais durante a reprodução do meme
+        if (this.isPlaying && this.activeLeader) {
+          this.fireworkTimer -= dt;
+          if (this.fireworkTimer <= 0) {
+            this.game.effects.spawnMemeFirework(this.activeLeader, screenW, screenH);
+            this.fireworkTimer = 0.55 + Math.random() * 0.80; // A cada 0.55s a 1.35s
+          }
+        }
+      }
+
+      /**
+       * Toca o meme atual apontado pelo índice na playlist do líder
+       */
+      playCurrentMeme(screenW, screenH) {
+        if (!this.activeLeader) return;
+        const leaderId = this.activeLeader;
+        const list = this.playlists[leaderId];
+        if (!list || list.length === 0) return;
+
+        // Percorre toda a lista embaralhada antes de embaralhá-la novamente
+        if (this.playlistIndices[leaderId] >= list.length) {
+          this.playlists[leaderId] = this.createShuffledSequence(leaderId);
+          this.playlistIndices[leaderId] = 0;
+        }
+
+        const memePath = this.playlists[leaderId][this.playlistIndices[leaderId]];
+        this.lastPlayedMeme[leaderId] = memePath;
+
+        this.isPlaying = true;
+        this.isWaitingNext = false;
+
+        // Exibe o texto temático com animação pop
+        this.showPhrase(leaderId);
+
+        // Disparo comemorativo de fogos sincronizado com a entrada do áudio
+        this.game.effects.spawnMemeFirework(leaderId, screenW, screenH);
+        this.fireworkTimer = 0.65 + Math.random() * 0.60;
+
+        // Executa a reprodução com Web Audio API ou fallback seguro
+        this.startAudioPlayback(memePath, () => {
+          this.onMemeFinished(screenW, screenH);
+        });
+      }
+
+      /**
+       * Callback executado assim que um meme termina de tocar
+       */
+      onMemeFinished(screenW, screenH) {
+        this.isPlaying = false;
+        this.currentAudioSource = null;
+
+        // "Quando não houver meme tocando, remover ou ocultar o texto temporariamente."
+        this.hideText();
+
+        // "esperar 2 segundos após o término antes de iniciar o próximo"
+        this.isWaitingNext = true;
+        if (this.nextTimer) clearTimeout(this.nextTimer);
+
+        this.nextTimer = setTimeout(() => {
+          this.nextTimer = null;
+          this.isWaitingNext = false;
+
+          // Se continuar o mesmo líder e som ativo, avança para o próximo áudio
+          if (this.activeLeader && this.game.audio && this.game.audio.enabled) {
+            this.playlistIndices[this.activeLeader]++;
+            this.playCurrentMeme(screenW, screenH);
+          }
+        }, 2000);
+      }
+
+      /**
+       * Toca o áudio garantindo suporte Web Audio API e fallback HTMLAudio
+       */
+      startAudioPlayback(path, onEnded) {
+        this.stopAudioPlaybackOnly();
+
+        const audioCtx = this.game.audio.ctx;
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+
+        const buffer = this.game.audio.mp3Buffers[path];
+
+        // 1. Tenta reproduzir via buffer pré-decodificado (zero delay)
+        if (buffer && audioCtx && audioCtx.state === 'running') {
+          try {
+            const source = audioCtx.createBufferSource();
+            const gain = audioCtx.createGain();
+            source.buffer = buffer;
+            gain.gain.setValueAtTime(0.88, audioCtx.currentTime);
+            source.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            let endedFired = false;
+            source.onended = () => {
+              if (!endedFired && this.currentAudioSource === source) {
+                endedFired = true;
+                this.currentAudioSource = null;
+                onEnded();
+              }
+            };
+
+            source.start(0);
+            this.currentAudioSource = source;
+            return;
+          } catch (e) {
+            console.warn('Erro ao tocar buffer de meme:', e);
+          }
+        }
+
+        // 2. Fallback resiliente com HTMLAudioElement
+        try {
+          const audio = new Audio(path);
+          audio.volume = 0.88;
+          let endedFired = false;
+
+          audio.onended = () => {
+            if (!endedFired && this.currentAudioSource === audio) {
+              endedFired = true;
+              this.currentAudioSource = null;
+              onEnded();
+            }
+          };
+
+          audio.onerror = () => {
+            if (!endedFired && this.currentAudioSource === audio) {
+              endedFired = true;
+              this.currentAudioSource = null;
+              onEnded();
+            }
+          };
+
+          const playPromise = audio.play();
+          if (playPromise && playPromise.catch) {
+            playPromise.catch(() => {
+              if (!endedFired && this.currentAudioSource === audio) {
+                endedFired = true;
+                this.currentAudioSource = null;
+                onEnded();
+              }
+            });
+          }
+          this.currentAudioSource = audio;
+        } catch (_) {
+          onEnded();
+        }
+      }
+
+      stopAudioPlaybackOnly() {
+        if (this.currentAudioSource) {
+          try {
+            if (this.currentAudioSource.stop) {
+              this.currentAudioSource.onended = null;
+              this.currentAudioSource.stop();
+              this.currentAudioSource.disconnect();
+            } else if (this.currentAudioSource.pause) {
+              this.currentAudioSource.onended = null;
+              this.currentAudioSource.pause();
+              this.currentAudioSource.currentTime = 0;
+            }
+          } catch (_) {}
+          this.currentAudioSource = null;
+        }
+      }
+
+      /**
+       * Interrompe imediatamente qualquer meme tocando e cancela temporizadores
+       */
+      stopCurrentMeme() {
+        this.stopAudioPlaybackOnly();
+        if (this.nextTimer) {
+          clearTimeout(this.nextTimer);
+          this.nextTimer = null;
+        }
+        if (this.phraseInterval) {
+          clearInterval(this.phraseInterval);
+          this.phraseInterval = null;
+        }
+        this.isPlaying = false;
+        this.isWaitingNext = false;
+      }
+
+      /**
+       * Exibe frases chamativas com animação de entrada
+       */
+      showPhrase(runnerId) {
+        if (!this.bannerEl || !this.textEl) return;
+        const list = this.phrases[runnerId] || [];
+        if (list.length === 0) return;
+
+        let candidates = list.filter((p) => p !== this.lastPhrase[runnerId]);
+        if (candidates.length === 0) candidates = list;
+        const phrase = candidates[Math.floor(Math.random() * candidates.length)];
+        this.lastPhrase[runnerId] = phrase;
+
+        this.textEl.textContent = phrase;
+        this.textEl.className = `meme-text-box ${runnerId === 'lula' ? 'meme-lula' : 'meme-bolsonaro'}`;
+
+        // Reinicia a animação pop instantaneamente
+        this.textEl.style.animation = 'none';
+        void this.textEl.offsetWidth; // Força reflow no DOM
+        this.textEl.style.animation = '';
+
+        this.bannerEl.classList.remove('meme-hidden');
+        this.bannerEl.classList.add('meme-visible');
+
+        // Se o áudio durar mais de 3.2 segundos, alterna suavemente para outra frase divertida
+        if (this.phraseInterval) clearInterval(this.phraseInterval);
+        this.phraseInterval = setInterval(() => {
+          if (this.isPlaying && this.activeLeader === runnerId) {
+            this.showPhrase(runnerId);
+          } else {
+            clearInterval(this.phraseInterval);
+            this.phraseInterval = null;
+          }
+        }, 3200);
+      }
+
+      /**
+       * Oculta o banner de frase
+       */
+      hideText() {
+        if (this.phraseInterval) {
+          clearInterval(this.phraseInterval);
+          this.phraseInterval = null;
+        }
+        if (this.bannerEl) {
+          this.bannerEl.classList.remove('meme-visible');
+          this.bannerEl.classList.add('meme-hidden');
+        }
+      }
+
+      /**
+       * Reinicia o estado dos memes (chamado no reset da corrida)
+       */
+      reset() {
+        this.stopCurrentMeme();
+        this.hideText();
+        this.activeLeader = null;
+        this.playlists = { lula: [], bolsonaro: [] };
+        this.playlistIndices = { lula: 0, bolsonaro: 0 };
+        this.lastPlayedMeme = { lula: null, bolsonaro: null };
+        this.lastPhrase = { lula: null, bolsonaro: null };
+      }
+    }
+
+    /* ==========================================================================
+       6. ENGINE PRINCIPAL DO JOGO
        ========================================================================== */
     class ArcadeRaceGame {
       constructor() {
@@ -1893,6 +2449,7 @@
         this.ctx = this.canvas.getContext('2d');
         this.audio = new RetroAudio();
         this.effects = new EffectsManager();
+        this.memeManager = new MemeManager(this);
 
         // Dados do cenário processado
         this.stadiumTiles = null;
@@ -2023,10 +2580,18 @@
         this.stadiumTiles = AssetProcessor.createSeamlessStadiumTiles(stadiumSource);
 
         // Pré-carrega os áudios de ultrapassagem da pasta mp3
-        await Promise.all([
+        const overtakeLoads = [
           this.audio.loadAudioBuffer('audio13', ASSET_PATHS.audio13),
           this.audio.loadAudioBuffer('audio22', ASSET_PATHS.audio22)
-        ]);
+        ];
+
+        // Pré-carrega todos os áudios de memes para GitHub Pages
+        const memeLoads = [
+          ...MEME_AUDIO_FILES.lula,
+          ...MEME_AUDIO_FILES.bolsonaro
+        ].map((path) => this.audio.loadAudioBuffer(path, path));
+
+        await Promise.all([...overtakeLoads, ...memeLoads]);
       }
 
       bindControls() {
@@ -2069,6 +2634,10 @@
         bindFastAction(this.ui.btnSound, () => {
           const on = this.audio.toggle();
           this.ui.soundIcon.textContent = on ? '🔊' : '🔇';
+          if (!on) {
+            this.memeManager.stopCurrentMeme();
+            this.memeManager.hideText();
+          }
         });
 
         bindFastAction(this.ui.btnReset, () => {
@@ -2157,6 +2726,7 @@
         this.bolsonaro.reset();
         this.effects.reset();
         this.audio.stopCurrentOvertake();
+        this.memeManager.reset();
         this.currentLeaderId = 'lula';
         this.bgScrollPx = 0;
         this.usingStartTile = true;
@@ -2276,6 +2846,19 @@
 
         this.effects.update(dt, this.width, vp.height, boostIntensity);
         this.updateUI();
+
+        // Sistema Centralizado de Memes: Detecta a liderança pela posição real dos personagens
+        // No empate (diferença <= 0.25m ou na largada), a reprodução é pausada
+        let memeLeader = null;
+        if (diffMeters > 0.25) {
+          memeLeader = 'lula';
+        } else if (diffMeters < -0.25) {
+          memeLeader = 'bolsonaro';
+        } else {
+          memeLeader = null; // Empate técnico na pista
+        }
+
+        this.memeManager.update(dt, memeLeader, this.width, vp.height);
       }
 
       updateUI() {
