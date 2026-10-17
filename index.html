@@ -1,0 +1,2671 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Corrida Arcade Infinita — Lula vs Bolsonaro</title>
+  <!-- Tailwind CSS para estrutura responsiva -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Fontes Pixel Art Retrô dos Anos 80/90 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --font-pixel: 'Press Start 2P', monospace;
+      --font-arcade: 'VT323', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0b0e17;
+      font-family: var(--font-pixel);
+      touch-action: manipulation;
+    }
+
+    /* Container Principal estilo Arcade */
+    #game-wrapper {
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: #101828;
+    }
+
+    /* Canvas ocupa toda a tela em Pixel Art nítida */
+    #game-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      z-index: 1;
+    }
+
+    /* Efeito sutil de scanlines CRT arcade */
+    .crt-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.14) 50%
+      );
+      background-size: 100% 4px;
+    }
+
+    /* HUD Superior Arcade */
+    .arcade-hud-top {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 14px;
+      background: linear-gradient(180deg, rgba(8, 12, 24, 0.88) 0%, rgba(8, 12, 24, 0.55) 80%, rgba(8, 12, 24, 0) 100%);
+      pointer-events: none;
+    }
+
+    .hud-box {
+      pointer-events: auto;
+      background: rgba(12, 18, 34, 0.88);
+      border: 3px solid #ffffff;
+      box-shadow: 0 4px 0 #000000, inset 0 0 0 2px #263554;
+      padding: 6px 10px;
+      border-radius: 6px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pixel-badge-lula {
+      background: #d91c24;
+      border: 2px solid #ffdf00;
+      padding: 3px 7px;
+      border-radius: 4px;
+      color: #fff;
+      text-shadow: 2px 2px 0 #000;
+      font-size: 10px;
+    }
+
+    .pixel-badge-bolsonaro {
+      background: #148820;
+      border: 2px solid #ffdf00;
+      padding: 3px 7px;
+      border-radius: 4px;
+      color: #ffdf00;
+      text-shadow: 2px 2px 0 #000;
+      font-size: 10px;
+    }
+
+    .hud-icon-btn {
+      pointer-events: auto;
+      background: #1e293b;
+      border: 3px solid #f8fafc;
+      box-shadow: 0 4px 0 #000;
+      color: #f8fafc;
+      font-family: var(--font-pixel);
+      font-size: 10px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-shadow: 1px 1px 0 #000;
+    }
+
+    .hud-icon-btn:hover {
+      background: #334155;
+    }
+
+    .hud-icon-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #000;
+    }
+
+    /* Barra Inferior de Controles de Impulso */
+    .controls-dock {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 6px 12px calc(10px + env(safe-area-inset-bottom, 0px)) 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .buttons-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.25fr;
+      gap: 10px;
+      align-items: stretch;
+      pointer-events: auto;
+    }
+
+    /* Estilo dos Botões Arcade Retrô */
+    .arcade-btn {
+      position: relative;
+      border: 3px solid #ffffff;
+      border-radius: 10px;
+      padding: 10px 10px 14px 10px;
+      font-family: var(--font-pixel);
+      color: #ffffff;
+      cursor: pointer;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: transform 0.08s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.08s ease, filter 0.15s ease;
+      text-shadow: 2px 2px 0 #000000;
+      touch-action: manipulation;
+    }
+
+    .arcade-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 36%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 100%);
+      pointer-events: none;
+    }
+
+    .arcade-btn:active:not(.on-cooldown) {
+      transform: translateY(4px) scale(0.98);
+    }
+
+    /* Botão 1: Impulso Lula (Vermelho) */
+    .btn-lula {
+      background: linear-gradient(180deg, #ef233c 0%, #b80c1f 100%);
+      border-color: #ffe5ec;
+      box-shadow: 0 6px 0 #59040e, 0 8px 16px rgba(0, 0, 0, 0.65);
+    }
+    .btn-lula:hover:not(.on-cooldown) {
+      filter: brightness(1.1);
+    }
+    .btn-lula.is-active {
+      border-color: #ffdf00;
+      box-shadow: 0 0 18px #ff2a4b, 0 4px 0 #59040e;
+      animation: pulse-glow-red 0.35s infinite alternate;
+    }
+
+    /* Botão 2: Impulso Bolsonaro (Verde/Amarelo) */
+    .btn-bolsonaro {
+      background: linear-gradient(180deg, #1ea82c 0%, #0e6b18 100%);
+      border-color: #ffdf00;
+      box-shadow: 0 6px 0 #063b0b, 0 8px 16px rgba(0, 0, 0, 0.65);
+    }
+    .btn-bolsonaro:hover:not(.on-cooldown) {
+      filter: brightness(1.1);
+    }
+    .btn-bolsonaro.is-active {
+      border-color: #ffffff;
+      box-shadow: 0 0 18px #38ef7d, 0 4px 0 #063b0b;
+      animation: pulse-glow-green 0.35s infinite alternate;
+    }
+
+    /* Botão 3: Super Impulso (Laranja / Ouro Energético) */
+    .btn-super {
+      background: linear-gradient(180deg, #ffbe0b 0%, #fb5607 55%, #d90429 100%);
+      border-color: #fff3b0;
+      box-shadow: 0 6px 0 #6a040f, 0 0 20px rgba(255, 190, 11, 0.55);
+      animation: super-idle-pulse 1.5s infinite ease-in-out;
+    }
+    .btn-super:hover:not(.on-cooldown) {
+      filter: brightness(1.12);
+    }
+    .btn-super.is-active {
+      border-color: #ffffff;
+      box-shadow: 0 0 28px #ffbe0b, 0 4px 0 #6a040f;
+      animation: pulse-glow-super 0.25s infinite alternate;
+    }
+
+    /* Estado de recarga */
+    .arcade-btn.on-cooldown {
+      filter: saturate(0.55) brightness(0.82);
+      cursor: not-allowed;
+    }
+
+    /* Barra de Progresso/Recarga na base de cada botão */
+    .btn-progress-track {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: rgba(0, 0, 0, 0.55);
+      overflow: hidden;
+    }
+
+    .btn-progress-fill {
+      height: 100%;
+      width: 100%;
+      background: #ffdf00;
+      transform-origin: left center;
+      transition: transform 0.05s linear;
+    }
+
+    /* Seletor Rápido do Alvo do Super Impulso */
+    .super-target-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+      pointer-events: auto;
+    }
+
+    .target-pill-group {
+      background: rgba(11, 15, 28, 0.92);
+      border: 2px solid #ffbe0b;
+      box-shadow: 0 3px 0 #000;
+      border-radius: 8px;
+      padding: 3px 5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .target-chip {
+      font-family: var(--font-pixel);
+      font-size: 8px;
+      padding: 4px 7px;
+      border-radius: 4px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      color: #cbd5e1;
+      background: #1e293b;
+      transition: all 0.12s ease;
+      text-shadow: 1px 1px 0 #000;
+    }
+
+    .target-chip.active-lula {
+      background: #d91c24;
+      color: #ffffff;
+      border-color: #ffdf00;
+    }
+
+    .target-chip.active-bolsonaro {
+      background: #148820;
+      color: #ffdf00;
+      border-color: #ffffff;
+    }
+
+    .target-chip.active-auto {
+      background: #d97706;
+      color: #ffffff;
+      border-color: #fef08a;
+    }
+
+    @keyframes pulse-glow-red {
+      from { transform: scale(1); }
+      to { transform: scale(1.02); }
+    }
+    @keyframes pulse-glow-green {
+      from { transform: scale(1); }
+      to { transform: scale(1.02); }
+    }
+    @keyframes pulse-glow-super {
+      from { transform: scale(1); filter: brightness(1.05); }
+      to { transform: scale(1.03); filter: brightness(1.25); }
+    }
+    @keyframes super-idle-pulse {
+      0%, 100% { box-shadow: 0 6px 0 #6a040f, 0 0 12px rgba(255, 190, 11, 0.45); }
+      50% { box-shadow: 0 6px 0 #6a040f, 0 0 24px rgba(255, 190, 11, 0.85); }
+    }
+
+    /* Responsividade Mobile Detalhada (320px, 360px, 390px, 430px e telas maiores) */
+    @media (max-width: 640px) {
+      .arcade-hud-top {
+        padding: calc(4px + env(safe-area-inset-top, 0px)) 6px 4px 6px;
+        gap: 4px;
+        justify-content: space-between;
+      }
+      .hud-box {
+        padding: 4px 6px;
+        gap: 5px;
+        border-width: 2px;
+        box-shadow: 0 2px 0 #000;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .hud-icon-btn {
+        padding: 6px 8px;
+        font-size: 8px;
+        min-height: 38px;
+        border-width: 2px;
+        box-shadow: 0 2px 0 #000;
+      }
+      .controls-dock {
+        padding: 4px 6px calc(6px + env(safe-area-inset-bottom, 0px)) 6px;
+        gap: 4px;
+      }
+      .super-target-bar {
+        justify-content: center;
+        width: 100%;
+      }
+      .target-pill-group {
+        padding: 2px 4px;
+        gap: 3px;
+        width: 100%;
+        justify-content: space-around;
+      }
+      .target-chip {
+        font-size: 7px;
+        padding: 4px 5px;
+        flex: 1 1 0;
+        text-align: center;
+        white-space: nowrap;
+      }
+      .buttons-grid {
+        gap: 4px;
+      }
+      .arcade-btn {
+        padding: 6px 2px 10px 2px;
+        min-height: 48px;
+        border-radius: 8px;
+        border-width: 2px;
+        box-shadow: 0 4px 0 rgba(0, 0, 0, 0.7);
+      }
+      .arcade-btn .btn-title {
+        font-size: 8px;
+        line-height: 1.1;
+      }
+      .arcade-btn .btn-status {
+        font-size: 6.5px;
+      }
+    }
+
+    /* Ajustes específicos para telas ultra-compactas (320px a 360px) */
+    @media (max-width: 360px) {
+      .arcade-hud-top {
+        padding: calc(3px + env(safe-area-inset-top, 0px)) 4px 3px 4px;
+      }
+      .hud-box {
+        padding: 3px 4px;
+      }
+      .hud-icon-btn {
+        padding: 5px 6px;
+        font-size: 8px;
+      }
+      .target-chip {
+        font-size: 6.5px;
+        padding: 3px 2px;
+      }
+      .buttons-grid {
+        gap: 3px;
+      }
+      .arcade-btn {
+        padding: 5px 1px 9px 1px;
+        min-height: 46px;
+      }
+      .arcade-btn .btn-title {
+        font-size: 7px;
+      }
+      .arcade-btn .btn-status {
+        font-size: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-wrapper">
+    <!-- Canvas 2D Principal da Corrida -->
+    <canvas id="game-canvas"></canvas>
+    <div class="crt-overlay"></div>
+
+    <!-- HUD Superior Retrô -->
+    <header class="arcade-hud-top">
+      <!-- Placar de Distância e Liderança -->
+      <div class="hud-box">
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <span id="leader-badge" class="pixel-badge-lula">1º LULA</span>
+            <span id="lead-gap-text" class="text-[9px] sm:text-[11px] text-yellow-300 tracking-tight">VANTAGEM: 0.0m</span>
+          </div>
+          <div class="flex items-center gap-3 text-[8px] sm:text-[10px] text-slate-200">
+            <span>🔴 LULA: <strong id="dist-lula" class="text-white">0m</strong></span>
+            <span>🟢 BOLSONARO: <strong id="dist-bolsonaro" class="text-white">0m</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botões de Utilitários (Som e Reiniciar) -->
+      <div class="flex items-center gap-2">
+        <button id="btn-sound" class="hud-icon-btn" title="Ativar/Desativar Som Arcade">
+          <span id="sound-icon">🔊</span>
+          <span class="hidden sm:inline">SOM</span>
+        </button>
+        <button id="btn-reset" class="hud-icon-btn" title="Reiniciar Corrida">
+          <span>↺</span>
+          <span class="hidden sm:inline">REINICIAR</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Interface Inferior com os 3 Botões de Impulso -->
+    <footer class="controls-dock">
+      <!-- Seletor Integrado para escolher quem recebe o Super Impulso -->
+      <div class="super-target-bar">
+        <div class="target-pill-group" role="group" aria-label="Escolher alvo do Super Impulso">
+          <span class="text-[8px] text-yellow-300 mr-1 hidden sm:inline">ALVO SUPER:</span>
+          <button type="button" id="target-lula" class="target-chip" data-target="lula">🔴 LULA</button>
+          <button type="button" id="target-bolsonaro" class="target-chip" data-target="bolsonaro">🟢 BOLSONARO</button>
+          <button type="button" id="target-auto" class="target-chip active-auto" data-target="alternate">⚡ ALTERNAR</button>
+        </div>
+      </div>
+
+      <!-- 3 Botões Principais de Impulso -->
+      <div class="buttons-grid">
+        <!-- Botão 1: Impulso Lula -->
+        <button type="button" id="btn-boost-lula" class="arcade-btn btn-lula">
+          <div class="btn-title flex items-center justify-center gap-1 font-bold tracking-tight text-center">
+            <span>★</span>
+            <span>IMPULSO LULA</span>
+          </div>
+          <span id="status-lula" class="btn-status text-yellow-200 opacity-95 text-center">PRONTO [TECLA 1]</span>
+          <div class="btn-progress-track">
+            <div id="bar-lula" class="btn-progress-fill" style="background: #ffdf00;"></div>
+          </div>
+        </button>
+
+        <!-- Botão 2: Impulso Bolsonaro -->
+        <button type="button" id="btn-boost-bolsonaro" class="arcade-btn btn-bolsonaro">
+          <div class="btn-title flex items-center justify-center gap-1 font-bold tracking-tight text-yellow-300 text-center">
+            <span>⚡</span>
+            <span>IMPULSO BOLSONARO</span>
+          </div>
+          <span id="status-bolsonaro" class="btn-status text-white opacity-95 text-center">PRONTO [TECLA 2]</span>
+          <div class="btn-progress-track">
+            <div id="bar-bolsonaro" class="btn-progress-fill" style="background: #ffffff;"></div>
+          </div>
+        </button>
+
+        <!-- Botão 3: Super Impulso -->
+        <button type="button" id="btn-super-boost" class="arcade-btn btn-super">
+          <div class="btn-title flex items-center justify-center gap-1 font-bold tracking-tight text-white text-center">
+            <span>🔥</span>
+            <span>SUPER IMPULSO</span>
+          </div>
+          <span id="status-super" class="btn-status text-yellow-100 opacity-95 text-center">ALVO: LULA [TECLA 3]</span>
+          <div class="btn-progress-track">
+            <div id="bar-super" class="btn-progress-fill" style="background: #00f5d4;"></div>
+          </div>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    /**
+     * ============================================================================
+     * CORRIDA ARCADE INFINITA: LULA VS BOLSONARO
+     * Arquitetura modular:
+     * 1. AudioEngine (Efeitos sonoros 8-bit via Web Audio API)
+     * 2. AssetProcessor (Carregamento das 3 imagens originais, remoção de fundo
+     *    branco via Flood Fill preservando detalhes internos e pista sem emendas)
+     * 3. Runner (Física de corrida, estados de impulso, animação de braços/pernas)
+     * 4. EffectsManager (Linhas de velocidade, poeira, partículas e banners retrô)
+     * 5. GameEngine (Loop principal com deltaTime, câmera elástica e controles)
+     * ============================================================================
+     */
+
+    const ASSET_PATHS = {
+      lula: 'img/Corredor de Inverno em Pixel Art.png',
+      bolsonaro: 'img/Político Brasileiro Correndo em Pixel Art.png',
+      stadium: 'img/Estádio Pixelado_ Esporte É Vida.png',
+      audio13: 'mp3/13.mp3',
+      audio22: 'mp3/22.mp3'
+    };
+
+    /* ==========================================================================
+       1. SISTEMA DE ÁUDIO 8-BIT RETRÔ (SINTETIZADOR WEB AUDIO API)
+       ========================================================================== */
+    class RetroAudio {
+      constructor() {
+        this.enabled = true;
+        this.ctx = null;
+        this.mp3Buffers = {};
+        this.currentOvertakeSource = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggle() {
+        this.enabled = !this.enabled;
+        if (this.enabled) {
+          this.init();
+          this.playBeep(660, 0.08, 'square');
+        } else {
+          this.stopCurrentOvertake();
+        }
+        return this.enabled;
+      }
+
+      playBeep(freq = 440, duration = 0.1, type = 'square', volume = 0.08) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+          gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {}
+      }
+
+      playBoost(isSuper = false) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const notes = isSuper
+          ? [330, 440, 554, 659, 880, 1108, 1318]
+          : [330, 440, 587, 784];
+
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = isSuper ? 'sawtooth' : 'square';
+          const startTime = now + idx * 0.045;
+          const dur = isSuper ? 0.11 : 0.08;
+
+          osc.frequency.setValueAtTime(freq, startTime);
+          gain.gain.setValueAtTime(isSuper ? 0.09 : 0.07, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(startTime);
+          osc.stop(startTime + dur);
+        });
+      }
+
+      async loadAudioBuffer(key, url) {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const candidates = [
+            url,
+            encodeURI(url),
+            `./${url}`,
+            `./${encodeURI(url)}`
+          ];
+          for (const cand of candidates) {
+            try {
+              const res = await fetch(cand);
+              if (!res.ok) continue;
+              const arrayBuf = await res.arrayBuffer();
+              const audioBuf = await this.ctx.decodeAudioData(arrayBuf);
+              this.mp3Buffers[key] = audioBuf;
+              return;
+            } catch (_) {}
+          }
+        } catch (e) {
+          console.warn(`Não foi possível pré-decodificar ${key}:`, e);
+        }
+      }
+
+      stopCurrentOvertake() {
+        if (this.currentOvertakeSource) {
+          try {
+            this.currentOvertakeSource.stop();
+            this.currentOvertakeSource.disconnect();
+          } catch (_) {}
+          this.currentOvertakeSource = null;
+        }
+      }
+
+      playOvertake(leaderId) {
+        if (!this.enabled) return;
+        this.init();
+
+        // Interrompe imediatamente qualquer áudio de ultrapassagem anterior para não embolar
+        this.stopCurrentOvertake();
+
+        const bufferKey = leaderId === 'lula' ? 'audio13' : 'audio22';
+        const buffer = this.mp3Buffers[bufferKey];
+
+        if (buffer && this.ctx && this.ctx.state === 'running') {
+          try {
+            const source = this.ctx.createBufferSource();
+            const gain = this.ctx.createGain();
+            source.buffer = buffer;
+            gain.gain.setValueAtTime(0.85, this.ctx.currentTime);
+            source.connect(gain);
+            gain.connect(this.ctx.destination);
+            source.onended = () => {
+              if (this.currentOvertakeSource === source) {
+                this.currentOvertakeSource = null;
+              }
+            };
+            source.start(0);
+            this.currentOvertakeSource = source;
+            return;
+          } catch (e) {
+            console.warn('Erro ao tocar buffer MP3:', e);
+          }
+        }
+
+        // Fallback para áudio sintetizado retrô caso o MP3 não esteja decodificado
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const notes = leaderId === 'lula' ? [523.25, 659.25, 783.99, 1046.5] : [440.0, 554.37, 659.25, 880.0];
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          const t = now + idx * 0.055;
+          osc.frequency.setValueAtTime(freq, t);
+          gain.gain.setValueAtTime(0.09, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.12);
+        });
+      }
+
+      playStep() {
+        if (!this.enabled || !this.ctx || this.ctx.state !== 'running') return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(95, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(42, this.ctx.currentTime + 0.035);
+          gain.gain.setValueAtTime(0.025, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.035);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.035);
+        } catch (e) {}
+      }
+    }
+
+    /* ==========================================================================
+       2. PROCESSAMENTO DE IMAGENS E PISTA INFINITA SEM EMENDAS
+       ========================================================================== */
+    class AssetProcessor {
+      /**
+       * Remove o fundo branco externo da imagem do personagem usando Flood Fill (BFS)
+       * a partir das bordas da imagem. Isso preserva 100% os pixels brancos internos
+       * (como a estrela branca do Lula, a barba e o colarinho branco do Bolsonaro),
+       * além de recortar o bounding box exato até a sola do sapato.
+       */
+      static processCharacterSprite(img) {
+        const w = img.naturalWidth || img.width;
+        const h = img.naturalHeight || img.height;
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = w;
+        tempCanvas.height = h;
+        const ctx = tempCanvas.getContext('2d', { willReadFrequently: true });
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, 0);
+
+        let minX = 0, minY = 0, maxX = w - 1, maxY = h - 1;
+
+        try {
+          const imgData = ctx.getImageData(0, 0, w, h);
+          const data = imgData.data;
+          const visited = new Uint8Array(w * h);
+          const queue = new Int32Array(w * h);
+          let head = 0;
+          let tail = 0;
+
+          const isBgWhite = (idx) => {
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            const a = data[idx + 3];
+            if (a < 20) return true;
+            // Pixels claros do fundo externo
+            return r > 224 && g > 224 && b > 224;
+          };
+
+          const pushSeed = (x, y) => {
+            const pos = y * w + x;
+            if (!visited[pos] && isBgWhite(pos * 4)) {
+              visited[pos] = 1;
+              queue[tail++] = pos;
+            }
+          };
+
+          // Semeia todas as 4 bordas da imagem
+          for (let x = 0; x < w; x++) {
+            pushSeed(x, 0);
+            pushSeed(x, h - 1);
+          }
+          for (let y = 0; y < h; y++) {
+            pushSeed(0, y);
+            pushSeed(w - 1, y);
+          }
+
+          // Flood Fill BFS para remover o fundo branco conectado ao exterior
+          while (head < tail) {
+            const curr = queue[head++];
+            const cx = curr % w;
+            const cy = (curr / w) | 0;
+            const pIdx = curr * 4;
+
+            // Torna transparente
+            data[pIdx + 3] = 0;
+
+            // Verifica os 4 vizinhos
+            if (cx > 0) {
+              const n = curr - 1;
+              if (!visited[n] && isBgWhite(n * 4)) { visited[n] = 1; queue[tail++] = n; }
+            }
+            if (cx < w - 1) {
+              const n = curr + 1;
+              if (!visited[n] && isBgWhite(n * 4)) { visited[n] = 1; queue[tail++] = n; }
+            }
+            if (cy > 0) {
+              const n = curr - w;
+              if (!visited[n] && isBgWhite(n * 4)) { visited[n] = 1; queue[tail++] = n; }
+            }
+            if (cy < h - 1) {
+              const n = curr + w;
+              if (!visited[n] && isBgWhite(n * 4)) { visited[n] = 1; queue[tail++] = n; }
+            }
+          }
+
+          // Remove halo esbranquiçado de 1px na borda imediata do contorno
+          for (let y = 1; y < h - 1; y++) {
+            for (let x = 1; x < w - 1; x++) {
+              const pos = y * w + x;
+              if (!visited[pos]) {
+                const idx = pos * 4;
+                const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+                if (r > 205 && g > 205 && b > 205) {
+                  if (visited[pos - 1] || visited[pos + 1] || visited[pos - w] || visited[pos + w]) {
+                    data[idx + 3] = 0;
+                  }
+                }
+              }
+            }
+          }
+
+          // Calcula o Bounding Box real dos pixels opacos do personagem
+          minX = w; minY = h; maxX = 0; maxY = 0;
+          for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+              const alpha = data[(y * w + x) * 4 + 3];
+              if (alpha > 30) {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+            }
+          }
+
+          ctx.putImageData(imgData, 0, 0);
+        } catch (err) {
+          // Caso ocorra restrição de CORS local, mantém o recorte proporcional
+          minX = Math.floor(w * 0.21);
+          maxX = Math.floor(w * 0.76);
+          minY = Math.floor(h * 0.03);
+          maxY = Math.floor(h * 0.96);
+        }
+
+        if (maxX <= minX || maxY <= minY) {
+          minX = 0; minY = 0; maxX = w - 1; maxY = h - 1;
+        }
+
+        const cropW = maxX - minX + 1;
+        const cropH = maxY - minY + 1;
+
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = cropW;
+        croppedCanvas.height = cropH;
+        const croppedCtx = croppedCanvas.getContext('2d');
+        croppedCtx.imageSmoothingEnabled = false;
+        croppedCtx.drawImage(tempCanvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+
+        // Gera 10 frames de corrida pré-renderizados em Pixel Art para animação fluida
+        const frames = AssetProcessor.buildRunningFrames(croppedCanvas);
+
+        return {
+          baseCanvas: croppedCanvas,
+          frames,
+          width: cropW,
+          height: cropH,
+          aspect: cropW / cropH
+        };
+      }
+
+      /**
+       * Constrói uma sequência de frames de corrida convincentes a partir do sprite
+       * original, animando perna dianteira, perna traseira e braços/tronco sem
+       * distorcer a cabeça ou perder a estética pixel art.
+       */
+      static buildRunningFrames(baseCanvas) {
+        const w = baseCanvas.width;
+        const h = baseCanvas.height;
+        const totalFrames = 12;
+        const frames = [];
+
+        // Margem extra para acomodar o movimento das pernas e braços sem cortar
+        const padX = Math.ceil(w * 0.12);
+        const padY = Math.ceil(h * 0.06);
+        const fw = w + padX * 2;
+        const fh = h + padY * 2;
+
+        // Divisões anatômicas proporcionais de ambos os sprites
+        const headBottomY = Math.floor(h * 0.265);
+        const torsoBottomY = Math.floor(h * 0.535);
+        const legSplitX = Math.floor(w * 0.475); // Separação limpa entre perna de trás e da frente
+
+        for (let i = 0; i < totalFrames; i++) {
+          const phase = (i / totalFrames) * Math.PI * 2;
+          // Ciclo da passada (-1 a +1)
+          const stride = Math.sin(phase);
+
+          const fCanvas = document.createElement('canvas');
+          fCanvas.width = fw;
+          fCanvas.height = fh;
+          const fCtx = fCanvas.getContext('2d');
+          fCtx.imageSmoothingEnabled = false;
+
+          // 1. Perna Traseira (Esquerda do sprite) articulada no quadril
+          const backHipX = padX + Math.floor(w * 0.43);
+          const backHipY = padY + Math.floor(h * 0.54);
+          // Oscila para frente quando stride < 0 e para trás quando stride > 0
+          const backLegAngle = (-stride * 0.22) + 0.06;
+
+          fCtx.save();
+          fCtx.translate(backHipX, backHipY);
+          fCtx.rotate(backLegAngle);
+          fCtx.drawImage(
+            baseCanvas,
+            0, torsoBottomY - 8, legSplitX, h - (torsoBottomY - 8),
+            -Math.floor(w * 0.43), -8, legSplitX, h - (torsoBottomY - 8)
+          );
+          fCtx.restore();
+
+          // 2. Perna Dianteira (Direita do sprite) articulada no quadril em oposição
+          const frontHipX = padX + Math.floor(w * 0.53);
+          const frontHipY = padY + Math.floor(h * 0.54);
+          const frontLegAngle = (stride * 0.20) - 0.05;
+
+          fCtx.save();
+          fCtx.translate(frontHipX, frontHipY);
+          fCtx.rotate(frontLegAngle);
+          fCtx.drawImage(
+            baseCanvas,
+            legSplitX, torsoBottomY - 8, w - legSplitX, h - (torsoBottomY - 8),
+            legSplitX - Math.floor(w * 0.53), -8, w - legSplitX, h - (torsoBottomY - 8)
+          );
+          fCtx.restore();
+
+          // 3. Tronco e Braços (Fatias horizontais com leve balanço de corrida dos punhos)
+          const sliceStep = 3;
+          for (let y = headBottomY; y < torsoBottomY + 8; y += sliceStep) {
+            const sh = Math.min(sliceStep, torsoBottomY + 8 - y);
+            const normY = (y - headBottomY) / (torsoBottomY - headBottomY);
+            // Movimento sutil de impulsão dos braços e peito
+            const armOffset = Math.round(stride * Math.sin(normY * Math.PI) * (w * 0.025));
+            fCtx.drawImage(
+              baseCanvas,
+              0, y, w, sh,
+              padX + armOffset, padY + y, w, sh
+            );
+          }
+
+          // 4. Cabeça (Firme e nítida, com leve movimento natural acompanhando o pescoço)
+          const headNodX = Math.round(stride * (w * 0.008));
+          const headNodY = Math.round(Math.abs(stride) * (h * 0.008));
+          fCtx.drawImage(
+            baseCanvas,
+            0, 0, w, headBottomY + 4,
+            padX + headNodX, padY + headNodY, w, headBottomY + 4
+          );
+
+          frames.push(fCanvas);
+        }
+
+        return {
+          list: frames,
+          frameWidth: fw,
+          frameHeight: fh,
+          padX,
+          padY
+        };
+      }
+
+      /**
+       * Cria um Tile Contínuo Perfeito a partir da imagem original do estádio.
+       * - O Tile Inicial preserva a linha de largada original com os números 1 a 5.
+       * - O Tile de Loop Infinito preenche a seção esquerda da pista com a textura
+       *   contínua da direita da própria pista e suaviza a transição lateral da
+       *   arquibancada para que nunca haja cortes secos ou linhas diagonais repetidas.
+       */
+      static createSeamlessStadiumTiles(stadiumImg) {
+        const w = stadiumImg.naturalWidth || stadiumImg.width;
+        const h = stadiumImg.naturalHeight || stadiumImg.height;
+
+        // Tile 0: Estádio Original (usado na largada) + transição suave na borda direita
+        const startTile = document.createElement('canvas');
+        startTile.width = w;
+        startTile.height = h;
+        const sCtx = startTile.getContext('2d');
+        sCtx.imageSmoothingEnabled = false;
+        sCtx.drawImage(stadiumImg, 0, 0);
+
+        // Tile 1: Estádio Contínuo sem a linha diagonal de largada para repetição infinita
+        const loopTile = document.createElement('canvas');
+        loopTile.width = w;
+        loopTile.height = h;
+        const lCtx = loopTile.getContext('2d');
+        lCtx.imageSmoothingEnabled = false;
+        lCtx.drawImage(stadiumImg, 0, 0);
+
+        // Na imagem original, a grama e a pista começam em ~49.8% da altura
+        // e a linha diagonal de largada ocupa os primeiros 36% da largura.
+        // Substituímos os primeiros 38% da pista por fatias perfeitas da metade direita (x: 42% a 80%)
+        // pois as linhas das raias são 100% horizontais!
+        const trackStartY = Math.floor(h * 0.498);
+        const trackHeight = h - trackStartY;
+        const cleanSourceX = Math.floor(w * 0.42);
+        const patchWidth = Math.floor(w * 0.40);
+
+        lCtx.drawImage(
+          stadiumImg,
+          cleanSourceX, trackStartY, patchWidth, trackHeight,
+          0, trackStartY, patchWidth, trackHeight
+        );
+
+        // Também uniformiza os últimos 4% da borda direita da pista para casar 100% com x=0
+        const seamWidth = Math.floor(w * 0.05);
+        for (let i = 0; i < seamWidth; i++) {
+          const alpha = i / seamWidth;
+          lCtx.save();
+          lCtx.globalAlpha = alpha;
+          lCtx.drawImage(
+            loopTile,
+            i, 0, 1, h,
+            w - seamWidth + i, 0, 1, h
+          );
+          lCtx.restore();
+
+          sCtx.save();
+          sCtx.globalAlpha = alpha;
+          sCtx.drawImage(
+            loopTile,
+            i, 0, 1, h,
+            w - seamWidth + i, 0, 1, h
+          );
+          sCtx.restore();
+        }
+
+        return {
+          startTile,
+          loopTile,
+          width: w,
+          height: h,
+          aspect: w / h
+        };
+      }
+
+      /**
+       * Reconstrói em Pixel Art fiel os sprites originais de Lula e Bolsonaro
+       * caso o ambiente sandbox não permita acesso aos arquivos locais.
+       */
+      static createFallbackCharacterCanvas(type) {
+        const gridW = 88;
+        const gridH = 96;
+        const scale = 4;
+
+        const pxCanvas = document.createElement('canvas');
+        pxCanvas.width = gridW;
+        pxCanvas.height = gridH;
+        const pCtx = pxCanvas.getContext('2d');
+        pCtx.imageSmoothingEnabled = false;
+
+        // Fundo branco externo (será processado pelo Flood Fill como na imagem original)
+        pCtx.fillStyle = '#ffffff';
+        pCtx.fillRect(0, 0, gridW, gridH);
+
+        const rect = (x, y, w, h, color) => {
+          pCtx.fillStyle = color;
+          pCtx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+        };
+
+        if (type === 'lula') {
+          // Gorro vermelho de inverno com estrela branca
+          rect(39, 4, 18, 11, '#18181b');
+          rect(40, 5, 16, 9, '#d91c24');
+          rect(39, 11, 18, 4, '#a30f17');
+          // Estrela branca no gorro
+          rect(52, 7, 3, 3, '#ffffff');
+          rect(53, 6, 1, 5, '#ffffff');
+          rect(51, 8, 5, 1, '#ffffff');
+
+          // Cabelo grisalho, rosto e barba branca
+          rect(39, 14, 6, 7, '#d1d5db');
+          rect(44, 14, 13, 11, '#e08e52');
+          rect(55, 17, 3, 3, '#d07b40'); // Nariz
+          rect(51, 16, 3, 2, '#18181b'); // Sobrancelha e olho
+          rect(42, 19, 14, 7, '#f3f4f6'); // Barba branca
+          rect(43, 21, 12, 4, '#d1d5db');
+          rect(52, 22, 3, 2, '#7c2d12'); // Boca
+
+          // Perna de trás (esquerda do sprite, x < 42)
+          rect(18, 64, 14, 8, '#18181b');
+          rect(19, 65, 12, 6, '#27272a');
+          rect(27, 54, 12, 13, '#18181b');
+          rect(28, 55, 10, 11, '#27272a');
+          rect(21, 67, 6, 1, '#ffffff'); // Faixa refletiva
+
+          // Tênis de trás (esquerdo)
+          rect(12, 65, 7, 13, '#18181b');
+          rect(13, 66, 3, 11, '#e5e7eb'); // Sola branca
+          rect(17, 67, 3, 5, '#dc2626');  // Meia/detalhe vermelho
+          rect(15, 69, 3, 4, '#ef4444');
+
+          // Perna da frente (direita do sprite, x >= 42)
+          rect(41, 49, 14, 13, '#18181b');
+          rect(42, 50, 12, 11, '#2f3037');
+          rect(44, 52, 7, 2, '#ffffff');  // Listra branca na coxa
+          rect(47, 60, 10, 18, '#18181b');
+          rect(48, 61, 8, 16, '#27272a');
+          rect(52, 64, 1, 10, '#ffffff'); // Listra branca na canela
+
+          // Tênis da frente (direito)
+          rect(48, 77, 4, 3, '#dc2626');  // Meia vermelha
+          rect(46, 79, 17, 8, '#18181b');
+          rect(47, 80, 14, 5, '#27272a');
+          rect(50, 81, 7, 2, '#ef4444');  // Detalhe vermelho no tênis
+          rect(46, 85, 17, 2, '#f3f4f6'); // Solado branco
+
+          // Tronco: Jaqueta vermelha acolchoada com cachecol e estrela branca
+          rect(34, 24, 21, 26, '#18181b');
+          rect(35, 25, 19, 24, '#e61923');
+          rect(38, 24, 16, 5, '#b80d16'); // Gola alta
+          rect(46, 29, 2, 20, '#1f2937'); // Zíper escuro
+          // Estrela branca no peito
+          rect(49, 33, 3, 3, '#ffffff');
+          rect(50, 32, 1, 5, '#ffffff');
+          rect(48, 34, 5, 1, '#ffffff');
+
+          // Braço de trás e luva preta
+          rect(24, 29, 12, 8, '#18181b');
+          rect(25, 30, 11, 6, '#d91c24');
+          rect(27, 31, 8, 1, '#e5e7eb'); // Listra no ombro
+          rect(23, 35, 7, 10, '#d91c24');
+          rect(22, 43, 7, 7, '#1f2937'); // Luva preta esquerda
+
+          // Braço da frente e luva preta erguida
+          rect(48, 34, 14, 9, '#18181b');
+          rect(49, 35, 12, 7, '#c8141d');
+          rect(59, 29, 8, 8, '#1f2937'); // Luva preta direita
+        } else {
+          // Cabelo castanho/grisalho e rosto do Bolsonaro
+          rect(42, 6, 18, 9, '#18181b');
+          rect(43, 7, 16, 7, '#4a3728');
+          rect(46, 9, 6, 4, '#6b5344');
+          rect(45, 12, 4, 5, '#9ca3af'); // Têmpora grisalha
+          rect(46, 12, 14, 14, '#e59866');
+          rect(58, 17, 3, 3, '#d4824f'); // Nariz
+          rect(54, 15, 4, 2, '#18181b'); // Sobrancelha e olho
+          rect(55, 22, 4, 1, '#9a522b'); // Expressão séria
+
+          // Perna de trás do terno (esquerda, x < 42)
+          rect(20, 63, 15, 9, '#090d16');
+          rect(21, 64, 13, 7, '#1b2238');
+          rect(30, 53, 12, 13, '#090d16');
+          rect(31, 54, 10, 11, '#1b2238');
+          // Sapato social preto de trás
+          rect(14, 65, 7, 13, '#090d16');
+          rect(15, 66, 5, 11, '#1f2937');
+
+          // Perna da frente do terno (direita, x >= 42)
+          rect(41, 50, 14, 13, '#090d16');
+          rect(42, 51, 12, 11, '#1e2640');
+          rect(46, 61, 11, 17, '#090d16');
+          rect(47, 62, 9, 15, '#1b2238');
+          // Sapato social preto da frente
+          rect(45, 78, 16, 8, '#090d16');
+          rect(46, 79, 14, 6, '#1f2937');
+
+          // Tronco: Terno azul-marinho, camisa branca e gravata verde-amarela
+          rect(33, 25, 22, 27, '#090d16');
+          rect(34, 26, 20, 25, '#1b2238');
+          rect(46, 25, 7, 14, '#f8fafc'); // Colarinho e camisa branca
+          // Gravata listrada verde e amarela
+          rect(47, 29, 5, 15, '#16a34a');
+          rect(47, 31, 5, 2, '#facc15');
+          rect(47, 35, 5, 2, '#facc15');
+          rect(47, 39, 5, 2, '#facc15');
+          // Broche na lapela
+          rect(44, 31, 2, 2, '#facc15');
+
+          // Braço de trás com bandeira do Brasil na manga
+          rect(24, 28, 13, 9, '#090d16');
+          rect(25, 29, 11, 7, '#1e2640');
+          // Patch da Bandeira do Brasil no ombro
+          rect(30, 29, 6, 4, '#15803d');
+          rect(31, 30, 4, 2, '#facc15');
+          rect(32, 30, 2, 2, '#1d4ed8');
+          rect(22, 35, 8, 10, '#1b2238');
+          rect(22, 44, 6, 2, '#f8fafc'); // Punho branco
+          rect(21, 46, 7, 6, '#e59866'); // Mão esquerda fechada
+
+          // Braço da frente e punho fechado
+          rect(49, 34, 15, 9, '#090d16');
+          rect(50, 35, 13, 7, '#161c30');
+          rect(61, 34, 3, 4, '#f8fafc'); // Punho branco
+          rect(61, 30, 8, 7, '#e59866'); // Mão direita fechada
+        }
+
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = gridW * scale;
+        outCanvas.height = gridH * scale;
+        const outCtx = outCanvas.getContext('2d');
+        outCtx.imageSmoothingEnabled = false;
+        outCtx.drawImage(pxCanvas, 0, 0, outCanvas.width, outCanvas.height);
+        return outCanvas;
+      }
+
+      /**
+       * Reconstrói o estádio "Esporte É Vida / Juntos Pelo Brasil / Mais Esporte, Mais Futuro"
+       * em Pixel Art caso a imagem local não possa ser carregada no sandbox.
+       */
+      static createFallbackStadiumCanvas() {
+        const w = 960;
+        const h = 540;
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+
+        // 1. Céu Azul Vibrante e Nuvens Pixeladas
+        ctx.fillStyle = '#1d72e8';
+        ctx.fillRect(0, 0, w, 130);
+        ctx.fillStyle = '#5da9ff';
+        ctx.fillRect(0, 45, w, 85);
+        ctx.fillStyle = '#d8ecff';
+        for (let x = 40; x < w; x += 150) {
+          ctx.fillRect(x, 28, 75, 22);
+          ctx.fillRect(x + 15, 18, 45, 14);
+        }
+
+        // Torre de iluminação à esquerda e Bandeira do Brasil à direita
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(36, 8, 12, 105);
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(22, 6, 42, 38);
+        ctx.fillStyle = '#f8fafc';
+        for (let r = 0; r < 3; r++) {
+          for (let c = 0; c < 4; c++) {
+            ctx.fillRect(26 + c * 9, 10 + r * 11, 6, 7);
+          }
+        }
+
+        // Bandeira do Brasil no topo direito e Placar Eletrônico
+        ctx.fillStyle = '#16a34a';
+        ctx.fillRect(822, 24, 44, 28);
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(832, 30, 24, 16);
+        ctx.fillStyle = '#1d4ed8';
+        ctx.fillRect(839, 34, 10, 8);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(855, 54, 105, 76);
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(857, 56, 101, 72);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(878, 72, 16, 36);
+        ctx.fillRect(908, 74, 38, 5);
+        ctx.fillRect(908, 88, 38, 5);
+        ctx.fillRect(908, 102, 38, 5);
+
+        // 2. Cobertura da Arquibancada
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(0, 66, 835, 14);
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(0, 80, 825, 22);
+
+        // 3. Arquibancada Lotada (Torcida Pixelada Colorida)
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, 102, w, 108);
+        const crowdColors = ['#facc15', '#16a34a', '#2563eb', '#ef4444', '#ffffff', '#f97316'];
+        for (let y = 106; y < 208; y += 6) {
+          for (let x = 0; x < w; x += 6) {
+            if ((x > 442 && x < 466) || (x > 145 && x < 162)) {
+              ctx.fillStyle = '#94a3b8'; // Escadarias
+            } else {
+              ctx.fillStyle = crowdColors[(x * 7 + y * 13) % crowdColors.length];
+            }
+            ctx.fillRect(x, y, 5, 5);
+          }
+        }
+
+        // 4. Faixas Patrióticas e Esportivas do Estádio
+        const banners = [
+          { x: 0, w: 255, bg: '#0255b8', text: 'ESPORTE É VIDA', color: '#ffffff' },
+          { x: 260, w: 315, bg: '#127332', text: 'JUNTOS PELO BRASIL', color: '#facc15' },
+          { x: 660, w: 300, bg: '#b81422', text: 'MAIS ESPORTE, MAIS FUTURO', color: '#ffffff' }
+        ];
+        ctx.fillStyle = '#1d4ed8';
+        ctx.fillRect(0, 210, w, 34);
+        banners.forEach((b) => {
+          ctx.fillStyle = b.bg;
+          ctx.fillRect(b.x, 212, b.w, 28);
+          ctx.strokeStyle = '#0f172a';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(b.x, 212, b.w, 28);
+          ctx.fillStyle = b.color;
+          ctx.font = 'bold 13px "Press Start 2P", monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(b.text, b.x + b.w / 2, 227);
+        });
+
+        // Gramado interno e arbustos acima da pista
+        ctx.fillStyle = '#388e3c';
+        ctx.fillRect(0, 244, w, 26);
+        ctx.fillStyle = '#1b5e20';
+        for (let x = 90; x < w; x += 180) {
+          ctx.fillRect(x, 250, 75, 16);
+        }
+
+        // 5. Pista de Atletismo Terracota (5 Raias Horizontais + Gramado Inferior)
+        const trackTop = 270;
+        const trackBottom = 492;
+        ctx.fillStyle = '#c8432b';
+        ctx.fillRect(0, trackTop, w, trackBottom - trackTop);
+
+        // Textura granulada sutil de pixel art na pista
+        ctx.fillStyle = '#b53821';
+        for (let y = trackTop; y < trackBottom; y += 8) {
+          for (let x = (y % 16); x < w; x += 16) {
+            ctx.fillRect(x, y, 4, 4);
+          }
+        }
+
+        // Linhas horizontais brancas das 5 raias
+        const laneY = [276, 294, 320, 354, 396, 442, 490];
+        ctx.fillStyle = '#f8fafc';
+        laneY.forEach((ly) => {
+          ctx.fillRect(0, ly, w, 3);
+        });
+
+        // Linha diagonal branca de largada e números 1 a 5 à esquerda
+        ctx.strokeStyle = '#f8fafc';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(310, 276);
+        ctx.lineTo(42, 490);
+        ctx.stroke();
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 20px "Press Start 2P", monospace';
+        const nums = [
+          { n: '1', x: 286, y: 308 },
+          { n: '2', x: 256, y: 338 },
+          { n: '3', x: 222, y: 376 },
+          { n: '4', x: 182, y: 420 },
+          { n: '5', x: 135, y: 468 }
+        ];
+        nums.forEach((item) => {
+          ctx.fillText(item.n, item.x, item.y);
+        });
+
+        // Gramado inferior na base da tela
+        ctx.fillStyle = '#2e7d32';
+        ctx.fillRect(0, trackBottom, w, h - trackBottom);
+        ctx.fillStyle = '#1b5e20';
+        for (let x = 0; x < w; x += 12) {
+          ctx.fillRect(x, trackBottom + (x % 24 === 0 ? 4 : 10), 6, 8);
+        }
+
+        return canvas;
+      }
+    }
+
+    /* ==========================================================================
+       3. CLASSE DO CORREDOR (FÍSICA, ANIMAÇÃO E HABILIDADES)
+       ========================================================================== */
+    class Runner {
+      constructor(config) {
+        this.id = config.id;
+        this.name = config.name;
+        this.primaryColor = config.primaryColor;
+        this.secondaryColor = config.secondaryColor;
+        this.tagBg = config.tagBg;
+        this.tagBorder = config.tagBorder;
+        this.tagText = config.tagText;
+        this.laneYRatio = config.laneYRatio; // Posição vertical dos pés na pista (0..1 da altura da imagem)
+        this.scaleFactor = config.scaleFactor || 1.0;
+
+        this.spriteData = null;
+
+        this.reset();
+      }
+
+      reset() {
+        this.distance = 0; // Distância percorrida em metros
+        this.baseSpeed = 9.5; // Velocidade normal base (m/s)
+        this.currentSpeed = this.baseSpeed;
+        this.naturalSeed = this.id === 'lula' ? 0.8 : 3.7;
+
+        // Estado do Impulso Normal
+        this.boostTimer = 0;
+        this.boostDuration = 3.0;
+        this.boostCooldown = 0;
+        this.boostCooldownMax = 1.6;
+
+        // Estado do Super Impulso
+        this.superTimer = 0;
+        this.superDuration = 4.6;
+
+        // Animação
+        this.animPhase = this.id === 'lula' ? 0 : Math.PI;
+        this.stepAccumulator = 0;
+        this.screenX = 0;
+        this.screenY = 0;
+        this.rank = this.id === 'lula' ? 1 : 2;
+        this.afterimages = [];
+      }
+
+      activateNormalBoost() {
+        if (this.boostTimer > 0 || this.boostCooldown > 0) return false;
+        this.boostTimer = this.boostDuration;
+        return true;
+      }
+
+      activateSuperBoost() {
+        this.superTimer = this.superDuration;
+        // Cancela ou sobrepõe impulso menor
+        if (this.boostTimer < 1.0) this.boostTimer = 1.0;
+        return true;
+      }
+
+      update(dt, elapsedTime, onStepCallback) {
+        // 1. Oscilação natural sutil para que a corrida seja dinâmica mesmo sem cliques
+        const wave1 = Math.sin(elapsedTime * 1.45 + this.naturalSeed) * 0.42;
+        const wave2 = Math.cos(elapsedTime * 2.6 + this.naturalSeed * 1.7) * 0.25;
+        let targetSpeed = this.baseSpeed + wave1 + wave2;
+
+        // 2. Efeito do Impulso Normal (aceleração rápida e decaimento gradual)
+        if (this.boostTimer > 0) {
+          this.boostTimer = Math.max(0, this.boostTimer - dt);
+          const norm = this.boostTimer / this.boostDuration; // 1 -> 0
+          // Curva suave que sobe rápido e desacelera gradualmente no fim
+          const boostPower = Math.sin(Math.pow(norm, 0.65) * (Math.PI / 2));
+          targetSpeed += 6.2 * boostPower;
+
+          if (this.boostTimer === 0) {
+            this.boostCooldown = this.boostCooldownMax;
+          }
+        } else if (this.boostCooldown > 0) {
+          this.boostCooldown = Math.max(0, this.boostCooldown - dt);
+        }
+
+        // 3. Efeito do Super Impulso (muito mais forte e duradouro)
+        if (this.superTimer > 0) {
+          this.superTimer = Math.max(0, this.superTimer - dt);
+          const norm = this.superTimer / this.superDuration;
+          const superPower = Math.sin(Math.pow(norm, 0.55) * (Math.PI / 2));
+          targetSpeed += 13.5 * superPower;
+        }
+
+        // Limite máximo seguro de velocidade para nunca quebrar a física
+        targetSpeed = Math.min(27.5, Math.max(7.5, targetSpeed));
+
+        // Interpolação suave da velocidade atual (sem teletransportes bruscos)
+        const accelRate = targetSpeed > this.currentSpeed ? 7.5 : 4.2;
+        this.currentSpeed += (targetSpeed - this.currentSpeed) * Math.min(1, dt * accelRate);
+
+        // Atualiza distância percorrida
+        this.distance += this.currentSpeed * dt;
+
+        // Atualiza fase da animação dos braços e pernas proporcionalmente à velocidade
+        const cycleSpeed = this.currentSpeed * 1.38;
+        this.animPhase = (this.animPhase + cycleSpeed * dt) % (Math.PI * 2);
+
+        // Dispara poeira/som a cada passada no chão
+        this.stepAccumulator += cycleSpeed * dt;
+        if (this.stepAccumulator >= Math.PI) {
+          this.stepAccumulator -= Math.PI;
+          if (onStepCallback) onStepCallback(this);
+        }
+
+        // Rastro (Afterimages) durante impulsos
+        if (this.isBoosted()) {
+          if (Math.random() < (this.superTimer > 0 ? 0.65 : 0.35)) {
+            this.afterimages.push({
+              x: this.screenX,
+              y: this.screenY,
+              frameIdx: this.getCurrentFrameIndex(),
+              alpha: this.superTimer > 0 ? 0.55 : 0.35,
+              isSuper: this.superTimer > 0
+            });
+          }
+        }
+
+        for (let i = this.afterimages.length - 1; i >= 0; i--) {
+          const ghost = this.afterimages[i];
+          ghost.x -= this.currentSpeed * 18 * dt;
+          ghost.alpha -= dt * 1.9;
+          if (ghost.alpha <= 0) {
+            this.afterimages.splice(i, 1);
+          }
+        }
+      }
+
+      isBoosted() {
+        return this.boostTimer > 0 || this.superTimer > 0;
+      }
+
+      getCurrentFrameIndex() {
+        if (!this.spriteData) return 0;
+        const total = this.spriteData.frames.list.length;
+        return Math.floor((this.animPhase / (Math.PI * 2)) * total) % total;
+      }
+    }
+
+    /* ==========================================================================
+       4. GERENCIADOR DE EFEITOS VISUAIS RETRÔ (PARTÍCULAS, LINHAS E BANNERS)
+       ========================================================================== */
+    class EffectsManager {
+      constructor() {
+        this.particles = [];
+        this.speedLines = [];
+        this.banners = [];
+        this.fireworks = [];
+      }
+
+      reset() {
+        this.particles = [];
+        this.speedLines = [];
+        this.banners = [];
+        this.fireworks = [];
+      }
+
+      spawnDust(x, y, color = '#f1dca7', count = 5) {
+        for (let i = 0; i < count; i++) {
+          this.particles.push({
+            x: x - 8 + (Math.random() - 0.5) * 14,
+            y: y - 2 + (Math.random() - 0.5) * 6,
+            vx: -60 - Math.random() * 90,
+            vy: -18 - Math.random() * 45,
+            size: 3 + Math.floor(Math.random() * 4),
+            color,
+            alpha: 0.9,
+            life: 0.35 + Math.random() * 0.25,
+            maxLife: 0.6
+          });
+        }
+      }
+
+      spawnBoostBurst(x, y, isSuper, primaryColor) {
+        const count = isSuper ? 28 : 14;
+        const palette = isSuper
+          ? ['#ffbe0b', '#fb5607', '#ffffff', '#ff006e', primaryColor]
+          : [primaryColor, '#ffdf00', '#ffffff'];
+
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = (isSuper ? 90 : 50) + Math.random() * (isSuper ? 180 : 110);
+          this.particles.push({
+            x,
+            y: y - 40 + (Math.random() - 0.5) * 40,
+            vx: Math.cos(angle) * speed - 60,
+            vy: Math.sin(angle) * speed,
+            size: 4 + Math.floor(Math.random() * 5),
+            color: palette[i % palette.length],
+            alpha: 1,
+            life: 0.45 + Math.random() * 0.35,
+            maxLife: 0.8
+          });
+        }
+      }
+
+      /**
+       * Dispara uma EXPLOSÃO GIGANTE DE FOGOS DE ARTIFÍCIO que toma quase toda a tela (60% a 90%),
+       * em ondas sucessivas épicas de estilo arcade com rastros luminosos, faíscas e partículas cintilantes.
+       */
+      spawnFireworks(baseX, baseY, theme = 'lula', screenW = 1200, screenH = 700) {
+        // Paletas temáticas com alto brilho e transições de cor exuberantes
+        const palette = theme === 'lula'
+          ? [
+              '#ff002b', '#e60026', '#ff2a55', '#ff4d6d', '#ff758f',
+              '#ff5400', '#ff8500', '#ffbe0b', '#ffd166', '#ffffff'
+            ]
+          : [
+              '#00e676', '#00c853', '#10b981', '#059669', '#34d399',
+              '#6ee7b7', '#a7f3d0', '#ffdf00', '#ffe169', '#ffffff'
+            ];
+
+        const accentColor = theme === 'lula' ? '#ff3344' : '#00e676';
+
+        // 14 a 16 centros de explosões gigantes cobrindo o topo, laterais, centro e profundidade da tela
+        const bursts = [
+          // Onda 1: Impacto Imediato nos arredores do corredor líder e no alto (0.00s a 0.20s)
+          { xPct: baseX / screenW, yPct: Math.max(0.20, (baseY - 140) / screenH), delay: 0.00, count: 58, speedMult: 1.35, sizeBoost: 2 },
+          { xPct: 0.22, yPct: 0.28, delay: 0.08, count: 48, speedMult: 1.25, sizeBoost: 1 },
+          { xPct: 0.78, yPct: 0.25, delay: 0.16, count: 52, speedMult: 1.30, sizeBoost: 1 },
+
+          // Onda 2: Explosões gigantescas no topo e no céu do estádio (0.35s a 0.75s)
+          { xPct: 0.50, yPct: 0.16, delay: 0.35, count: 65, speedMult: 1.50, sizeBoost: 3 },
+          { xPct: 0.35, yPct: 0.22, delay: 0.50, count: 50, speedMult: 1.30, sizeBoost: 2 },
+          { xPct: 0.65, yPct: 0.20, delay: 0.65, count: 54, speedMult: 1.35, sizeBoost: 2 },
+
+          // Onda 3: Expansão periférica massiva para as laterais e centro-baixo (0.85s a 1.30s)
+          { xPct: 0.12, yPct: 0.38, delay: 0.85, count: 46, speedMult: 1.20, sizeBoost: 1 },
+          { xPct: 0.88, yPct: 0.34, delay: 1.00, count: 48, speedMult: 1.25, sizeBoost: 1 },
+          { xPct: 0.44, yPct: 0.32, delay: 1.15, count: 55, speedMult: 1.30, sizeBoost: 2 },
+
+          // Onda 4: Apoteose final em grande sequência aérea (1.45s a 2.10s)
+          { xPct: 0.28, yPct: 0.15, delay: 1.45, count: 52, speedMult: 1.40, sizeBoost: 2 },
+          { xPct: 0.72, yPct: 0.17, delay: 1.65, count: 54, speedMult: 1.45, sizeBoost: 2 },
+          { xPct: 0.50, yPct: 0.24, delay: 1.90, count: 70, speedMult: 1.60, sizeBoost: 3 },
+          { xPct: 0.82, yPct: 0.42, delay: 2.10, count: 42, speedMult: 1.15, sizeBoost: 1 }
+        ];
+
+        bursts.forEach((b) => {
+          const cx = b.xPct * screenW;
+          const cy = b.yPct * screenH;
+          const count = b.count;
+
+          // Anel principal de choque e faíscas da explosão
+          for (let i = 0; i < count; i++) {
+            const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.28;
+            const baseSpeed = (120 + Math.random() * 260) * b.speedMult;
+            const color = palette[Math.floor(Math.random() * palette.length)];
+            const maxLife = 1.35 + Math.random() * 1.30; // Garante efeito completo durando até 3.5 segundos
+
+            this.fireworks.push({
+              x: cx,
+              y: cy,
+              prevX: cx,
+              prevY: cy,
+              vx: Math.cos(angle) * baseSpeed,
+              vy: Math.sin(angle) * baseSpeed,
+              gravity: 52 + Math.random() * 32,
+              drag: 0.962,
+              size: (3 + Math.floor(Math.random() * 4)) + b.sizeBoost,
+              color,
+              alpha: 0.95,
+              life: maxLife,
+              maxLife,
+              delay: b.delay,
+              sparkle: Math.random() < 0.65,
+              hasTrail: true
+            });
+          }
+
+          // Flash central de luminosidade da detonação
+          this.fireworks.push({
+            x: cx,
+            y: cy,
+            prevX: cx,
+            prevY: cy,
+            vx: 0,
+            vy: 0,
+            gravity: 0,
+            drag: 1,
+            size: 26 + b.sizeBoost * 10,
+            color: '#ffffff',
+            alpha: 0.9,
+            life: 0.14,
+            maxLife: 0.14,
+            delay: b.delay,
+            sparkle: false,
+            isFlash: true
+          });
+        });
+      }
+
+      spawnBanner(text, subtext, bgColor, borderColor) {
+        // Evita acumular muitos banners iguais
+        if (this.banners.length > 1) this.banners.shift();
+        this.banners.push({
+          text,
+          subtext,
+          bgColor,
+          borderColor,
+          timer: 1.55,
+          maxTimer: 1.55
+        });
+      }
+
+      update(dt, canvasW, canvasH, boostIntensity) {
+        // Atualiza partículas de poeira e impulso
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          const p = this.particles[i];
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vy += 90 * dt; // Gravidade leve
+          p.life -= dt;
+          p.alpha = Math.max(0, p.life / p.maxLife);
+          if (p.life <= 0) {
+            this.particles.splice(i, 1);
+          }
+        }
+
+        // Atualiza partículas de fogos de artifício gigantes com rastro e balística
+        for (let i = this.fireworks.length - 1; i >= 0; i--) {
+          const fw = this.fireworks[i];
+          if (fw.delay > 0) {
+            fw.delay -= dt;
+            continue;
+          }
+
+          fw.prevX = fw.x;
+          fw.prevY = fw.y;
+
+          fw.x += fw.vx * dt;
+          fw.y += fw.vy * dt;
+          fw.vx *= fw.drag;
+          fw.vy = fw.vy * fw.drag + fw.gravity * dt;
+          fw.life -= dt;
+          fw.alpha = Math.max(0, fw.life / fw.maxLife);
+
+          if (fw.life <= 0) {
+            this.fireworks.splice(i, 1);
+          }
+        }
+
+        // Gera linhas de velocidade horizontais quando há impulso ativo
+        if (boostIntensity > 0 && Math.random() < boostIntensity * 0.75) {
+          this.speedLines.push({
+            x: canvasW + 20,
+            y: canvasH * (0.46 + Math.random() * 0.46),
+            length: 45 + Math.random() * 95 * boostIntensity,
+            speed: (900 + Math.random() * 650) * (0.8 + boostIntensity * 0.5),
+            thickness: boostIntensity > 1 ? 3 : 2,
+            color: boostIntensity > 1 ? '#ffbe0b' : '#ffffff',
+            alpha: 0.45 + Math.random() * 0.35
+          });
+        }
+
+        for (let i = this.speedLines.length - 1; i >= 0; i--) {
+          const l = this.speedLines[i];
+          l.x -= l.speed * dt;
+          if (l.x + l.length < 0) {
+            this.speedLines.splice(i, 1);
+          }
+        }
+
+        // Atualiza banners temporários
+        for (let i = this.banners.length - 1; i >= 0; i--) {
+          this.banners[i].timer -= dt;
+          if (this.banners[i].timer <= 0) {
+            this.banners.splice(i, 1);
+          }
+        }
+      }
+
+      drawBehindRunners(ctx) {
+        // Desenha linhas de velocidade na pista
+        for (const l of this.speedLines) {
+          ctx.save();
+          ctx.globalAlpha = l.alpha;
+          ctx.fillStyle = l.color;
+          ctx.fillRect(Math.round(l.x), Math.round(l.y), Math.round(l.length), l.thickness);
+          ctx.restore();
+        }
+      }
+
+      drawFront(ctx, canvasW, canvasH) {
+        // Desenha partículas de poeira e impulso em pixel art (quadrados nítidos)
+        for (const p of this.particles) {
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = p.color;
+          ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+          ctx.fillStyle = '#000000';
+          ctx.strokeRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+          ctx.restore();
+        }
+
+        // Desenha partículas de fogos de artifício gigantes com rastros luminosos e cintilação
+        for (const fw of this.fireworks) {
+          if (fw.delay > 0) continue;
+          ctx.save();
+
+          if (fw.isFlash) {
+            // Flash circular translúcido do estouro do fogo
+            ctx.globalAlpha = Math.max(0, fw.alpha * 0.55);
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(Math.round(fw.x), Math.round(fw.y), fw.size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            continue;
+          }
+
+          const flicker = fw.sparkle ? (0.68 + Math.random() * 0.32) : 1;
+          const currentAlpha = Math.max(0, Math.min(0.92, fw.alpha * flicker));
+          ctx.globalAlpha = currentAlpha;
+
+          // Rastro luminoso retrô acompanhando a trajetória da partícula
+          if (fw.hasTrail) {
+            ctx.save();
+            ctx.strokeStyle = fw.color;
+            ctx.lineWidth = Math.max(2, fw.size - 1);
+            ctx.lineCap = 'square';
+            ctx.globalAlpha = currentAlpha * 0.50;
+            ctx.beginPath();
+            ctx.moveTo(Math.round(fw.prevX), Math.round(fw.prevY));
+            ctx.lineTo(Math.round(fw.x), Math.round(fw.y));
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          // Núcleo brilhante da partícula de fogo em pixel art
+          ctx.fillStyle = fw.color;
+          const fx = Math.round(fw.x - fw.size * 0.5);
+          const fy = Math.round(fw.y - fw.size * 0.5);
+          ctx.fillRect(fx, fy, fw.size, fw.size);
+
+          // Contorno pixelado para manter nitidez retrô sem borrar os corredores
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(fx, fy, fw.size, fw.size);
+
+          ctx.restore();
+        }
+
+        // Desenha Banners Arcade ("IMPULSO!", "SUPER IMPULSO!", "ULTRAPASSAGEM!")
+        this.banners.forEach((b, idx) => {
+          const progress = 1 - (b.timer / b.maxTimer);
+          let scale = 1;
+          if (progress < 0.15) {
+            scale = 0.5 + (progress / 0.15) * 0.6;
+          } else if (progress < 0.25) {
+            scale = 1.1 - ((progress - 0.15) / 0.10) * 0.1;
+          }
+          const alpha = b.timer < 0.3 ? b.timer / 0.3 : 1;
+
+          const centerX = canvasW * 0.5;
+          const centerY = Math.max(92, canvasH * 0.20) + idx * 54;
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.translate(centerX, centerY);
+          ctx.scale(scale, scale);
+
+          const isSmallMobile = canvasW < 380;
+          const isMobile = canvasW < 520;
+          const fontSize = isSmallMobile ? 10 : (isMobile ? 12 : 17);
+          ctx.font = `bold ${fontSize}px "Press Start 2P", monospace`;
+          const textW = ctx.measureText(b.text).width;
+          const boxW = Math.min(canvasW - 24, Math.max(textW + (isSmallMobile ? 20 : 36), isSmallMobile ? 160 : 200));
+          const boxH = b.subtext ? (isSmallMobile ? 38 : 46) : (isSmallMobile ? 28 : 34);
+
+          // Sombra pixelada
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(-boxW / 2 + 3, -boxH / 2 + 3, boxW, boxH);
+
+          // Fundo do Banner
+          ctx.fillStyle = b.bgColor;
+          ctx.fillRect(-boxW / 2, -boxH / 2, boxW, boxH);
+
+          // Borda Dupla Arcade
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = b.borderColor;
+          ctx.strokeRect(-boxW / 2, -boxH / 2, boxW, boxH);
+
+          // Texto Principal
+          ctx.fillStyle = '#000000';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(b.text, 2, b.subtext ? -4 : 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(b.text, 0, b.subtext ? -6 : 0);
+
+          // Subtexto
+          if (b.subtext) {
+            ctx.font = `bold ${isMobile ? 8 : 10}px "Press Start 2P", monospace`;
+            ctx.fillStyle = '#ffdf00';
+            ctx.fillText(b.subtext, 0, 12);
+          }
+
+          ctx.restore();
+        });
+      }
+    }
+
+    /* ==========================================================================
+       5. ENGINE PRINCIPAL DO JOGO
+       ========================================================================== */
+    class ArcadeRaceGame {
+      constructor() {
+        this.canvas = document.getElementById('game-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.audio = new RetroAudio();
+        this.effects = new EffectsManager();
+
+        // Dados do cenário processado
+        this.stadiumTiles = null;
+        this.bgScrollPx = 0;
+        this.usingStartTile = true;
+        this.elapsedTime = 0;
+        this.lastFrameTime = performance.now();
+        this.cameraShake = 0;
+
+        // Estado do Super Impulso compartilhado
+        this.superTargetMode = 'alternate'; // 'lula' | 'bolsonaro' | 'alternate'
+        this.nextAlternateTarget = 'lula';
+        this.superCooldown = 0;
+        this.superCooldownMax = 2.4;
+
+        // Instancia os dois corredores nas raias da pista
+        // Bolsonaro na raia superior (Raia 2/3) e Lula na raia inferior (Raia 4/5)
+        this.bolsonaro = new Runner({
+          id: 'bolsonaro',
+          name: 'BOLSONARO',
+          primaryColor: '#148820',
+          secondaryColor: '#ffdf00',
+          tagBg: '#127a1d',
+          tagBorder: '#ffdf00',
+          tagText: '#ffdf00',
+          laneYRatio: 0.775,
+          scaleFactor: 0.96
+        });
+
+        this.lula = new Runner({
+          id: 'lula',
+          name: 'LULA',
+          primaryColor: '#d91c24',
+          secondaryColor: '#ffffff',
+          tagBg: '#d91c24',
+          tagBorder: '#ffffff',
+          tagText: '#ffffff',
+          laneYRatio: 0.875,
+          scaleFactor: 1.0
+        });
+
+        this.runners = [this.bolsonaro, this.lula];
+        this.currentLeaderId = 'lula';
+
+        // Referências de UI
+        this.ui = {
+          leaderBadge: document.getElementById('leader-badge'),
+          leadGapText: document.getElementById('lead-gap-text'),
+          distLula: document.getElementById('dist-lula'),
+          distBolsonaro: document.getElementById('dist-bolsonaro'),
+          btnBoostLula: document.getElementById('btn-boost-lula'),
+          btnBoostBolsonaro: document.getElementById('btn-boost-bolsonaro'),
+          btnSuperBoost: document.getElementById('btn-super-boost'),
+          statusLula: document.getElementById('status-lula'),
+          statusBolsonaro: document.getElementById('status-bolsonaro'),
+          statusSuper: document.getElementById('status-super'),
+          barLula: document.getElementById('bar-lula'),
+          barBolsonaro: document.getElementById('bar-bolsonaro'),
+          barSuper: document.getElementById('bar-super'),
+          btnSound: document.getElementById('btn-sound'),
+          soundIcon: document.getElementById('sound-icon'),
+          btnReset: document.getElementById('btn-reset'),
+          targetChips: document.querySelectorAll('.target-chip')
+        };
+
+        this.handleResize();
+        window.addEventListener('resize', () => this.handleResize());
+        this.bindControls();
+      }
+
+      handleResize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = Math.floor(this.width * dpr);
+        this.canvas.height = Math.floor(this.height * dpr);
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.ctx.imageSmoothingEnabled = false;
+      }
+
+      async loadAssets() {
+        const tryLoadSingleUrl = (url) =>
+          new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error(`Falha ao abrir: ${url}`));
+            img.src = url;
+          });
+
+        // Tenta todas as variações de caminho/codificação e usa o fallback Pixel Art se bloqueado no preview
+        const loadSafe = async (fileName, fallbackFactory) => {
+          const rawName = fileName.replace(/^img\//, '');
+          const candidates = [
+            fileName,
+            encodeURI(fileName),
+            `./${fileName}`,
+            `./${encodeURI(fileName)}`,
+            rawName,
+            encodeURI(rawName),
+            `./${rawName}`,
+            `img/${rawName}`,
+            `./img/${rawName}`,
+            `./img/${encodeURI(rawName)}`,
+            fileName.normalize('NFC'),
+            fileName.normalize('NFD'),
+            encodeURI(fileName.normalize('NFD'))
+          ];
+
+          for (const candidate of candidates) {
+            try {
+              return await tryLoadSingleUrl(candidate);
+            } catch (_) {
+              // Tenta a próxima variação de URL
+            }
+          }
+
+          return fallbackFactory();
+        };
+
+        const [lulaSource, bolsonaroSource, stadiumSource] = await Promise.all([
+          loadSafe(ASSET_PATHS.lula, () => AssetProcessor.createFallbackCharacterCanvas('lula')),
+          loadSafe(ASSET_PATHS.bolsonaro, () => AssetProcessor.createFallbackCharacterCanvas('bolsonaro')),
+          loadSafe(ASSET_PATHS.stadium, () => AssetProcessor.createFallbackStadiumCanvas())
+        ]);
+
+        this.lula.spriteData = AssetProcessor.processCharacterSprite(lulaSource);
+        this.bolsonaro.spriteData = AssetProcessor.processCharacterSprite(bolsonaroSource);
+        this.stadiumTiles = AssetProcessor.createSeamlessStadiumTiles(stadiumSource);
+
+        // Pré-carrega os áudios de ultrapassagem da pasta mp3
+        await Promise.all([
+          this.audio.loadAudioBuffer('audio13', ASSET_PATHS.audio13),
+          this.audio.loadAudioBuffer('audio22', ASSET_PATHS.audio22)
+        ]);
+      }
+
+      bindControls() {
+        // Garante que o contexto de áudio seja ativado na primeira interação do usuário
+        const unlockAudioOnFirstInteraction = () => {
+          this.audio.init();
+          window.removeEventListener('pointerdown', unlockAudioOnFirstInteraction);
+          window.removeEventListener('keydown', unlockAudioOnFirstInteraction);
+        };
+        window.addEventListener('pointerdown', unlockAudioOnFirstInteraction, { once: true });
+        window.addEventListener('keydown', unlockAudioOnFirstInteraction, { once: true });
+
+        // Função utilitária para resposta imediata tanto em toque quanto em clique
+        const bindFastAction = (el, handler) => {
+          el.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            handler();
+          });
+        };
+
+        // Botão 1: Impulso Lula
+        bindFastAction(this.ui.btnBoostLula, () => this.triggerNormalBoost(this.lula));
+
+        // Botão 2: Impulso Bolsonaro
+        bindFastAction(this.ui.btnBoostBolsonaro, () => this.triggerNormalBoost(this.bolsonaro));
+
+        // Botão 3: Super Impulso
+        bindFastAction(this.ui.btnSuperBoost, () => this.triggerSuperBoost());
+
+        // Seletor de Alvo do Super Impulso
+        this.ui.targetChips.forEach((chip) => {
+          bindFastAction(chip, () => {
+            const target = chip.getAttribute('data-target');
+            this.setSuperTargetMode(target);
+            this.audio.playBeep(520, 0.05, 'square');
+          });
+        });
+
+        // Som e Reiniciar
+        bindFastAction(this.ui.btnSound, () => {
+          const on = this.audio.toggle();
+          this.ui.soundIcon.textContent = on ? '🔊' : '🔇';
+        });
+
+        bindFastAction(this.ui.btnReset, () => {
+          this.resetRace();
+          this.audio.playBeep(440, 0.12, 'triangle');
+        });
+
+        // Atalhos de Teclado Arcade (1, 2, 3, Espaço)
+        window.addEventListener('keydown', (e) => {
+          if (e.repeat) return;
+          if (e.key === '1' || e.key.toLowerCase() === 'a') {
+            this.triggerNormalBoost(this.lula);
+          } else if (e.key === '2' || e.key.toLowerCase() === 'l') {
+            this.triggerNormalBoost(this.bolsonaro);
+          } else if (e.key === '3' || e.key === ' ') {
+            e.preventDefault();
+            this.triggerSuperBoost();
+          }
+        });
+      }
+
+      setSuperTargetMode(mode) {
+        this.superTargetMode = mode;
+        this.ui.targetChips.forEach((chip) => {
+          chip.className = 'target-chip';
+          const t = chip.getAttribute('data-target');
+          if (t === mode) {
+            if (mode === 'lula') chip.classList.add('active-lula');
+            else if (mode === 'bolsonaro') chip.classList.add('active-bolsonaro');
+            else chip.classList.add('active-auto');
+          }
+        });
+        this.updateUI();
+      }
+
+      getEffectiveSuperRunner() {
+        if (this.superTargetMode === 'lula') return this.lula;
+        if (this.superTargetMode === 'bolsonaro') return this.bolsonaro;
+        return this.nextAlternateTarget === 'lula' ? this.lula : this.bolsonaro;
+      }
+
+      triggerNormalBoost(runner) {
+        if (runner.activateNormalBoost()) {
+          this.audio.playBoost(false);
+          this.effects.spawnBoostBurst(runner.screenX, runner.screenY, false, runner.primaryColor);
+          this.effects.spawnBanner(
+            `IMPULSO ${runner.name}!`,
+            'ACELERAÇÃO ATIVADA!',
+            runner.primaryColor,
+            '#ffdf00'
+          );
+          this.cameraShake = Math.max(this.cameraShake, 0.18);
+        } else {
+          this.audio.playBeep(160, 0.06, 'sawtooth', 0.05);
+        }
+      }
+
+      triggerSuperBoost() {
+        const anySuperActive = this.lula.superTimer > 0 || this.bolsonaro.superTimer > 0;
+        if (anySuperActive || this.superCooldown > 0) {
+          this.audio.playBeep(150, 0.07, 'sawtooth', 0.05);
+          return;
+        }
+
+        const chosenRunner = this.getEffectiveSuperRunner();
+        chosenRunner.activateSuperBoost();
+
+        // Se estiver em modo alternado, prepara o outro personagem para o próximo clique
+        if (this.superTargetMode === 'alternate') {
+          this.nextAlternateTarget = chosenRunner.id === 'lula' ? 'bolsonaro' : 'lula';
+        }
+
+        this.audio.playBoost(true);
+        this.effects.spawnBoostBurst(chosenRunner.screenX, chosenRunner.screenY, true, chosenRunner.primaryColor);
+        this.effects.spawnBanner(
+          '⚡ SUPER IMPULSO! ⚡',
+          `${chosenRunner.name} DISPAROU NA FRENTE!`,
+          '#d90429',
+          '#ffbe0b'
+        );
+        this.cameraShake = 0.42;
+      }
+
+      resetRace() {
+        this.lula.reset();
+        this.bolsonaro.reset();
+        this.effects.reset();
+        this.audio.stopCurrentOvertake();
+        this.currentLeaderId = 'lula';
+        this.bgScrollPx = 0;
+        this.usingStartTile = true;
+        this.superCooldown = 0;
+        this.elapsedTime = 0;
+        this.effects.spawnBanner('LARGADA!', 'CORRIDA INFINITA INICIADA', '#1e293b', '#ffdf00');
+      }
+
+      /**
+       * Calcula a geometria vertical do estádio na tela para que a pista
+       * ocupe a área principal e os botões inferiores não cubram os corredores.
+       */
+      getTrackViewport() {
+        const isMobile = this.width < 640;
+        const bottomReserved = isMobile ? Math.min(106, Math.max(86, this.height * 0.16)) : 110;
+        const playableHeight = Math.max(220, this.height - bottomReserved);
+        return {
+          topY: 0,
+          height: playableHeight,
+          bottomY: playableHeight
+        };
+      }
+
+      update(dt) {
+        this.elapsedTime += dt;
+
+        if (this.cameraShake > 0) {
+          this.cameraShake = Math.max(0, this.cameraShake - dt);
+        }
+
+        // Gerencia recarga do Super Impulso quando termina
+        const prevSuperActive = this.lula.superTimer > 0 || this.bolsonaro.superTimer > 0;
+
+        const onRunnerStep = (runner) => {
+          const dustColor = runner.superTimer > 0 ? '#ffbe0b' : '#e6ccb2';
+          this.effects.spawnDust(runner.screenX - 10, runner.screenY - 4, dustColor, runner.isBoosted() ? 6 : 3);
+          if (runner.id === 'lula') this.audio.playStep();
+        };
+
+        this.lula.update(dt, this.elapsedTime, onRunnerStep);
+        this.bolsonaro.update(dt, this.elapsedTime, onRunnerStep);
+
+        const nowSuperActive = this.lula.superTimer > 0 || this.bolsonaro.superTimer > 0;
+        if (prevSuperActive && !nowSuperActive) {
+          this.superCooldown = this.superCooldownMax;
+        } else if (!nowSuperActive && this.superCooldown > 0) {
+          this.superCooldown = Math.max(0, this.superCooldown - dt);
+        }
+
+        // Partículas contínuas enquanto o Super Impulso estiver ativo
+        [this.lula, this.bolsonaro].forEach((r) => {
+          if (r.superTimer > 0 && Math.random() < 0.55) {
+            this.effects.spawnDust(r.screenX - 18, r.screenY - 25, '#ffbe0b', 2);
+          }
+        });
+
+        // Velocidade da câmera acompanha a velocidade média ponderada pelo líder
+        const maxSpeed = Math.max(this.lula.currentSpeed, this.bolsonaro.currentSpeed);
+        const avgSpeed = (this.lula.currentSpeed + this.bolsonaro.currentSpeed) * 0.5;
+        const cameraSpeed = avgSpeed * 0.65 + maxSpeed * 0.35;
+
+        // Deslocamento horizontal contínuo do estádio (pixels por segundo)
+        const pxPerMeter = Math.max(28, this.width * 0.036);
+        this.bgScrollPx += cameraSpeed * pxPerMeter * dt;
+
+        // Calcula posições horizontais (X) relativas na tela com escala elástica (Math.tanh)
+        // garantindo que ambos SEMPRE permaneçam visíveis na tela mesmo com grande distância!
+        const diffMeters = this.lula.distance - this.bolsonaro.distance; // + se Lula na frente
+        const centerX = this.width * 0.46;
+        const maxSpread = this.width * 0.29; // Permite ir de ~17% a ~75% da largura da tela
+        const normalizedSpread = Math.tanh(diffMeters / 22); // Satura suavemente sem nunca sair da tela
+
+        const targetLulaX = centerX + normalizedSpread * maxSpread;
+        const targetBolsonaroX = centerX - normalizedSpread * maxSpread;
+
+        // Interpolação suave de posição visual na tela
+        if (this.lula.screenX === 0) {
+          this.lula.screenX = targetLulaX;
+          this.bolsonaro.screenX = targetBolsonaroX;
+        } else {
+          this.lula.screenX += (targetLulaX - this.lula.screenX) * Math.min(1, dt * 8);
+          this.bolsonaro.screenX += (targetBolsonaroX - this.bolsonaro.screenX) * Math.min(1, dt * 8);
+        }
+
+        // Posição Y alinhada às raias da pista
+        const vp = this.getTrackViewport();
+        this.bolsonaro.screenY = vp.topY + vp.height * this.bolsonaro.laneYRatio;
+        this.lula.screenY = vp.topY + vp.height * this.lula.laneYRatio;
+
+        // Verifica Ultrapassagem e atualiza 1º / 2º imediatamente
+        const newLeaderId = this.lula.distance >= this.bolsonaro.distance ? 'lula' : 'bolsonaro';
+        if (newLeaderId !== this.currentLeaderId && Math.abs(diffMeters) > 0.35) {
+          this.currentLeaderId = newLeaderId;
+          const leader = newLeaderId === 'lula' ? this.lula : this.bolsonaro;
+          this.audio.playOvertake(newLeaderId);
+          this.effects.spawnFireworks(leader.screenX, leader.screenY, newLeaderId, this.width, vp.height);
+          this.effects.spawnBanner(
+            'ULTRAPASSAGEM!',
+            `${leader.name} ASSUMIU O 1º LUGAR!`,
+            leader.primaryColor,
+            '#ffffff'
+          );
+        }
+
+        if (this.currentLeaderId === 'lula') {
+          this.lula.rank = 1;
+          this.bolsonaro.rank = 2;
+        } else {
+          this.bolsonaro.rank = 1;
+          this.lula.rank = 2;
+        }
+
+        // Intensidade de efeitos de velocidade
+        let boostIntensity = 0;
+        if (this.lula.superTimer > 0 || this.bolsonaro.superTimer > 0) boostIntensity = 1.6;
+        else if (this.lula.boostTimer > 0 || this.bolsonaro.boostTimer > 0) boostIntensity = 0.9;
+
+        this.effects.update(dt, this.width, vp.height, boostIntensity);
+        this.updateUI();
+      }
+
+      updateUI() {
+        // Distâncias e Vantagem no HUD Superior
+        const lulaM = Math.floor(this.lula.distance);
+        const bolsonaroM = Math.floor(this.bolsonaro.distance);
+        const gap = Math.abs(this.lula.distance - this.bolsonaro.distance).toFixed(1);
+
+        this.ui.distLula.textContent = `${lulaM}m`;
+        this.ui.distBolsonaro.textContent = `${bolsonaroM}m`;
+        this.ui.leadGapText.textContent = `VANTAGEM: +${gap}m`;
+
+        if (this.currentLeaderId === 'lula') {
+          this.ui.leaderBadge.className = 'pixel-badge-lula';
+          this.ui.leaderBadge.textContent = '1º LULA NA LIDERANÇA';
+        } else {
+          this.ui.leaderBadge.className = 'pixel-badge-bolsonaro';
+          this.ui.leaderBadge.textContent = '1º BOLSONARO NA LIDERANÇA';
+        }
+
+        // Botão 1: Estado do Impulso Lula
+        this.updateBoostButtonUI(
+          this.lula,
+          this.ui.btnBoostLula,
+          this.ui.statusLula,
+          this.ui.barLula,
+          'PRONTO [TECLA 1]'
+        );
+
+        // Botão 2: Estado do Impulso Bolsonaro
+        this.updateBoostButtonUI(
+          this.bolsonaro,
+          this.ui.btnBoostBolsonaro,
+          this.ui.statusBolsonaro,
+          this.ui.barBolsonaro,
+          'PRONTO [TECLA 2]'
+        );
+
+        // Botão 3: Estado do Super Impulso
+        const activeSuperRunner =
+          this.lula.superTimer > 0 ? this.lula : this.bolsonaro.superTimer > 0 ? this.bolsonaro : null;
+
+        if (activeSuperRunner) {
+          this.ui.btnSuperBoost.classList.add('is-active');
+          this.ui.btnSuperBoost.classList.remove('on-cooldown');
+          const ratio = activeSuperRunner.superTimer / activeSuperRunner.superDuration;
+          this.ui.barSuper.style.transform = `scaleX(${ratio})`;
+          this.ui.statusSuper.textContent = `ATIVO: ${activeSuperRunner.name}! (${activeSuperRunner.superTimer.toFixed(1)}s)`;
+        } else if (this.superCooldown > 0) {
+          this.ui.btnSuperBoost.classList.remove('is-active');
+          this.ui.btnSuperBoost.classList.add('on-cooldown');
+          const ratio = 1 - this.superCooldown / this.superCooldownMax;
+          this.ui.barSuper.style.transform = `scaleX(${ratio})`;
+          this.ui.statusSuper.textContent = `RECARREGANDO (${this.superCooldown.toFixed(1)}s)`;
+        } else {
+          this.ui.btnSuperBoost.classList.remove('is-active', 'on-cooldown');
+          this.ui.barSuper.style.transform = 'scaleX(1)';
+          const nextRunner = this.getEffectiveSuperRunner();
+          this.ui.statusSuper.textContent = `ALVO: ${nextRunner.name} [TECLA 3]`;
+        }
+      }
+
+      updateBoostButtonUI(runner, btnEl, statusEl, barEl, readyText) {
+        if (runner.boostTimer > 0) {
+          btnEl.classList.add('is-active');
+          btnEl.classList.remove('on-cooldown');
+          const ratio = runner.boostTimer / runner.boostDuration;
+          barEl.style.transform = `scaleX(${ratio})`;
+          statusEl.textContent = `IMPULSO ATIVO! (${runner.boostTimer.toFixed(1)}s)`;
+        } else if (runner.boostCooldown > 0) {
+          btnEl.classList.remove('is-active');
+          btnEl.classList.add('on-cooldown');
+          const ratio = 1 - runner.boostCooldown / runner.boostCooldownMax;
+          barEl.style.transform = `scaleX(${ratio})`;
+          statusEl.textContent = `RECARGA (${runner.boostCooldown.toFixed(1)}s)`;
+        } else {
+          btnEl.classList.remove('is-active', 'on-cooldown');
+          barEl.style.transform = 'scaleX(1)';
+          statusEl.textContent = readyText;
+        }
+      }
+
+      /* ========================================================================
+         RENDERIZAÇÃO DO CENÁRIO, PERSONAGENS E IDENTIFICADORES FLUTUANTES
+         ======================================================================== */
+      render() {
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.width, this.height);
+
+        ctx.save();
+        // Tremor sutil de câmera no início de um Super Impulso
+        if (this.cameraShake > 0) {
+          const shakeMag = this.cameraShake * 7;
+          ctx.translate(
+            (Math.random() - 0.5) * shakeMag,
+            (Math.random() - 0.5) * shakeMag
+          );
+        }
+
+        // 1. Renderiza o Estádio e Pista Infinita
+        this.drawInfiniteStadium(ctx);
+
+        // 2. Linhas de velocidade atrás dos corredores
+        this.effects.drawBehindRunners(ctx);
+
+        // 3. Desenha os Corredores (ordenados por Y para perspectiva 2D correta)
+        this.drawRunner(ctx, this.bolsonaro);
+        this.drawRunner(ctx, this.lula);
+
+        // 4. Desenha os Identificadores Flutuantes Acima da Cabeça de Cada Corredor
+        this.drawFloatingIdentifier(ctx, this.bolsonaro);
+        this.drawFloatingIdentifier(ctx, this.lula);
+
+        // 5. Efeitos frontais (Partículas de poeira/energia e Banners Arcade)
+        const vp = this.getTrackViewport();
+        this.effects.drawFront(ctx, this.width, vp.height);
+
+        ctx.restore();
+      }
+
+      drawInfiniteStadium(ctx) {
+        if (!this.stadiumTiles) return;
+
+        const vp = this.getTrackViewport();
+        const tileH = vp.height;
+        const tileW = Math.ceil(tileH * this.stadiumTiles.aspect);
+
+        const totalScroll = Math.floor(this.bgScrollPx);
+        const firstTileIndex = Math.floor(totalScroll / tileW);
+        const offsetX = -(totalScroll % tileW);
+
+        // Quantas cópias horizontais são necessárias para cobrir toda a largura da tela sem buracos
+        const copiesNeeded = Math.ceil((this.width - offsetX) / tileW) + 1;
+
+        for (let i = 0; i < copiesNeeded; i++) {
+          const tileNumber = firstTileIndex + i;
+          const drawX = Math.floor(offsetX + i * tileW);
+          // O primeiro bloco (tileNumber === 0) exibe a linha de largada original;
+          // todos os blocos seguintes usam o loopTile contínuo sem emendas!
+          const sourceTile = tileNumber === 0 ? this.stadiumTiles.startTile : this.stadiumTiles.loopTile;
+
+          // Sobrepõe 1px para evitar qualquer fresta de subpixel
+          ctx.drawImage(sourceTile, drawX, vp.topY, tileW + 1, tileH);
+        }
+
+        // Preenche a faixa inferior (onde ficam os botões) com a extensão da grama da pista
+        if (this.height > vp.bottomY) {
+          const grassStripY = Math.floor(this.stadiumTiles.height * 0.93);
+          const grassStripH = this.stadiumTiles.height - grassStripY;
+          for (let i = 0; i < copiesNeeded; i++) {
+            const drawX = Math.floor(offsetX + i * tileW);
+            ctx.drawImage(
+              this.stadiumTiles.loopTile,
+              0, grassStripY, this.stadiumTiles.width, grassStripH,
+              drawX, vp.bottomY - 2, tileW + 1, this.height - vp.bottomY + 4
+            );
+          }
+          // Escurece levemente a área sob os botões para destacar a interface
+          ctx.fillStyle = 'rgba(7, 11, 22, 0.48)';
+          ctx.fillRect(0, vp.bottomY, this.width, this.height - vp.bottomY);
+        }
+      }
+
+      getRunnerRenderMetrics(runner) {
+        const vp = this.getTrackViewport();
+        // Altura proporcional dos personagens na pista (grandes e bem reconhecíveis em mobile e desktop)
+        const isMobile = this.width < 640;
+        const targetRatio = isMobile ? (this.height > this.width ? 0.29 : 0.35) : 0.34;
+        const minHeight = isMobile ? 95 : 120;
+        const maxHeight = isMobile ? 210 : 255;
+        const baseCharHeight = Math.max(minHeight, Math.min(maxHeight, vp.height * targetRatio)) * runner.scaleFactor;
+        const sprite = runner.spriteData;
+        const charWidth = baseCharHeight * sprite.aspect;
+
+        // Salto vertical sutil da passada de corrida
+        const strideBounce = Math.abs(Math.sin(runner.animPhase)) * (baseCharHeight * 0.045);
+
+        // Inclinação sutil para frente ao acelerar
+        const speedRatio = Math.max(0, (runner.currentSpeed - runner.baseSpeed) / 14);
+        const forwardTilt = 0.03 + speedRatio * 0.09;
+
+        const footX = runner.screenX;
+        const footY = runner.screenY;
+
+        return {
+          charWidth,
+          charHeight: baseCharHeight,
+          strideBounce,
+          forwardTilt,
+          footX,
+          footY,
+          headTopY: footY - baseCharHeight - strideBounce
+        };
+      }
+
+      drawRunner(ctx, runner) {
+        const sprite = runner.spriteData;
+        if (!sprite) return;
+
+        const m = this.getRunnerRenderMetrics(runner);
+        const framesInfo = sprite.frames;
+        const frameCanvas = framesInfo.list[runner.getCurrentFrameIndex()];
+
+        // Escala do frame com padding
+        const scaleY = m.charHeight / sprite.height;
+        const scaleX = m.charWidth / sprite.width;
+        const drawW = framesInfo.frameWidth * scaleX;
+        const drawH = framesInfo.frameHeight * scaleY;
+        const padBottomPx = framesInfo.padY * scaleY;
+
+        // 1. Sombra projetada na pista alinhada aos pés
+        const shadowScale = 1 - (m.strideBounce / m.charHeight) * 1.4;
+        const shadowW = m.charWidth * 0.62 * shadowScale;
+        const shadowH = Math.max(6, m.charHeight * 0.075);
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+        ctx.beginPath();
+        ctx.ellipse(m.footX, m.footY - 3, shadowW * 0.5, shadowH * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 2. Desenha Rastros de Velocidade (Afterimages) quando estiver com Impulso
+        for (const ghost of runner.afterimages) {
+          const ghostFrame = framesInfo.list[ghost.frameIdx];
+          ctx.save();
+          ctx.globalAlpha = ghost.alpha;
+          ctx.translate(ghost.x, ghost.y - m.strideBounce);
+          ctx.rotate(m.forwardTilt);
+          if (ghost.isSuper) {
+            ctx.filter = 'sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.2)';
+          }
+          ctx.drawImage(
+            ghostFrame,
+            -drawW * 0.5,
+            -drawH + padBottomPx,
+            drawW,
+            drawH
+          );
+          ctx.restore();
+        }
+
+        // 3. Aura de Energia discreta se estiver com Impulso / Super Impulso
+        if (runner.isBoosted()) {
+          ctx.save();
+          const isSuper = runner.superTimer > 0;
+          ctx.globalAlpha = isSuper ? 0.35 : 0.22;
+          ctx.fillStyle = isSuper ? '#ffbe0b' : runner.primaryColor;
+          ctx.beginPath();
+          ctx.ellipse(
+            m.footX,
+            m.footY - m.charHeight * 0.5 - m.strideBounce,
+            m.charWidth * (isSuper ? 0.52 : 0.42),
+            m.charHeight * 0.52,
+            0,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 4. Desenha o Sprite Animado do Corredor
+        ctx.save();
+        ctx.translate(m.footX, m.footY - m.strideBounce);
+        ctx.rotate(m.forwardTilt);
+        ctx.drawImage(
+          frameCanvas,
+          -drawW * 0.5,
+          -drawH + padBottomPx,
+          drawW,
+          drawH
+        );
+        ctx.restore();
+      }
+
+      /**
+       * Desenha o identificador retrô flutuante acima da cabeça de cada personagem:
+       * - Lula: fundo vermelho, texto branco/amarelo, seta indicadora e posição ("1º" / "2º").
+       * - Bolsonaro: fundo verde/amarelo, texto amarelo/branco, seta indicadora e posição.
+       * - Garante que nunca seja cortado nas bordas da tela.
+       */
+      drawFloatingIdentifier(ctx, runner) {
+        const m = this.getRunnerRenderMetrics(runner);
+        const isSmallMobile = this.width < 400;
+        const isMobile = this.width < 580;
+        const fontSize = isSmallMobile ? 7.5 : (isMobile ? 8.5 : 11);
+
+        ctx.save();
+        ctx.font = `bold ${fontSize}px "Press Start 2P", monospace`;
+
+        const posLabel = `${runner.rank}º `;
+        const fullLabel = `${posLabel}${runner.name}`;
+        const textWidth = ctx.measureText(fullLabel).width;
+
+        const padX = isSmallMobile ? 5 : (isMobile ? 7 : 11);
+        const boxW = Math.ceil(textWidth + padX * 2);
+        const boxH = isSmallMobile ? 18 : (isMobile ? 21 : 26);
+
+        // Mantém sempre visível dentro das bordas horizontais e verticais da tela
+        const clampedCenterX = Math.max(boxW * 0.5 + 6, Math.min(this.width - boxW * 0.5 - 6, m.footX + 4));
+        const arrowTipY = Math.max(boxH + (isMobile ? 52 : 62), m.headTopY - (isMobile ? 4 : 6));
+        const boxX = Math.round(clampedCenterX - boxW * 0.5);
+        const boxY = Math.round(arrowTipY - boxH - (isMobile ? 5 : 7));
+
+        // Sombra Sólida Arcade
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(boxX + 2, boxY + 2, boxW, boxH);
+
+        // Fundo Principal do Identificador
+        ctx.fillStyle = runner.tagBg;
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+
+        // Faixa lateral verde-amarela no identificador do Bolsonaro ou estrela no Lula
+        if (runner.id === 'bolsonaro') {
+          ctx.fillStyle = '#ffdf00';
+          ctx.fillRect(boxX, boxY, 5, boxH);
+        } else {
+          ctx.fillStyle = '#ffdf00';
+          ctx.fillRect(boxX, boxY, 5, boxH);
+        }
+
+        // Borda Pixelada Retrô
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = runner.superTimer > 0 ? '#00f5d4' : runner.tagBorder;
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+        // Barra fina de duração quando com Impulso Ativo
+        if (runner.isBoosted()) {
+          const ratio = runner.superTimer > 0
+            ? runner.superTimer / runner.superDuration
+            : runner.boostTimer / runner.boostDuration;
+          ctx.fillStyle = runner.superTimer > 0 ? '#ffbe0b' : '#ffffff';
+          ctx.fillRect(boxX + 2, boxY + boxH - 4, (boxW - 4) * ratio, 3);
+        }
+
+        // Texto da Posição ("1º" / "2º") + Nome do Personagem
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const textCenterY = boxY + Math.floor(boxH * 0.5) + 1;
+
+        // Sombra do texto
+        ctx.fillStyle = '#000000';
+        ctx.fillText(fullLabel, clampedCenterX + 1, textCenterY + 1);
+
+        // Cor do texto
+        ctx.fillStyle = runner.rank === 1 ? '#ffdf00' : '#ffffff';
+        ctx.fillText(fullLabel, clampedCenterX, textCenterY);
+
+        // Seta/Marcador apontando diretamente para a cabeça do personagem
+        const arrowX = Math.max(boxX + 10, Math.min(boxX + boxW - 10, m.footX + 6));
+        ctx.beginPath();
+        ctx.moveTo(arrowX - 6, boxY + boxH);
+        ctx.lineTo(arrowX + 6, boxY + boxH);
+        ctx.lineTo(arrowX, arrowTipY);
+        ctx.closePath();
+        ctx.fillStyle = runner.tagBg;
+        ctx.fill();
+        ctx.strokeStyle = runner.tagBorder;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      start() {
+        const loop = (now) => {
+          // DeltaTime seguro em segundos (limitado a 50ms para evitar saltos ao trocar de aba)
+          const dt = Math.min(0.05, Math.max(0.001, (now - this.lastFrameTime) / 1000));
+          this.lastFrameTime = now;
+
+          this.update(dt);
+          this.render();
+
+          requestAnimationFrame(loop);
+        };
+
+        this.lastFrameTime = performance.now();
+        requestAnimationFrame(loop);
+      }
+    }
+
+    /* ==========================================================================
+       INICIALIZAÇÃO DO JOGO APÓS O CARREGAMENTO DOS ASSETS
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', async () => {
+      const game = new ArcadeRaceGame();
+      await game.loadAssets();
+      game.start();
+    });
+  </script>
+</body>
+</html>
